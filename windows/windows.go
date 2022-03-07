@@ -105,7 +105,7 @@ func (h *Handler) pointLoop(windowCenterPosition win.POINT) {
 			log.Printf("Error in set cursor position")
 		}
 
-		time.Sleep(time.Millisecond * 10)
+		time.Sleep(time.Millisecond * 20)
 	}
 }
 
@@ -140,7 +140,7 @@ func (h *Handler) CreateWindow(rdClientHwnd win.HWND) (win.HWND, error) {
 			// set window background color to white
 			HbrBackground: win.HBRUSH(win.GetStockObject(win.WHITE_BRUSH)),
 			LpszClassName: className,
-			LpfnWndProc:   syscall.NewCallback(h.windowProc(rdClientHwnd)),
+			LpfnWndProc:   syscall.NewCallback(win.DefWindowProc),
 			LpszMenuName:  nil,
 
 			CbClsExtra: 0,
@@ -174,6 +174,14 @@ func (h *Handler) CreateWindow(rdClientHwnd win.HWND) (win.HWND, error) {
 
 		var windowProc = h.getMessage()
 
+		// Show window on RDP client with transparent style
+		winapi.SetLayeredWindowAttributes(hwnd, 0xFFFFFF, byte(1), winapi.LWA_ALPHA)
+		var err = h.PutWindowOnAnotherWindow(hwnd, rdClientHwnd)
+		if err != nil {
+			h.Debugf("%s", errors.Wrap(err, "windowProc"))
+		}
+		// winapi.ShowCursor(false)
+
 		result <- resultAttr{hwnd, nil}
 
 		for {
@@ -188,14 +196,12 @@ func (h *Handler) CreateWindow(rdClientHwnd win.HWND) (win.HWND, error) {
 			}
 
 			win.TranslateMessage(&msg)
-			win.DispatchMessage(&msg)
 			h.Output(10, fmt.Sprintf("disp: %+v \n", msg))
 			windowProc(msg)
 		}
 	}()
 
 	var res = <-result
-
 	close(result)
 
 	return res.hwnd, res.err
@@ -207,7 +213,6 @@ func (h Handler) getMessage() func(msg win.MSG) error {
 		if key.EventInput == "F8" {
 			os.Exit(0)
 		}
-
 		h.remote.SendInput(KeyInput{key, state})
 	}
 
@@ -323,20 +328,8 @@ func (h Handler) getMessage() func(msg win.MSG) error {
 	}
 }
 
-func (h Handler) windowProc(rdClientHwnd win.HWND) func(hwnd win.HWND, uMsg uint32, wParam uintptr, lParam uintptr) uintptr {
+func (h Handler) windowProc() func(hwnd win.HWND, uMsg uint32, wParam uintptr, lParam uintptr) uintptr {
 	return func(hwnd win.HWND, uMsg uint32, wParam uintptr, lParam uintptr) uintptr {
-		switch uMsg {
-		case win.WM_CREATE:
-			// Show window on RDP client with transparent style
-			winapi.SetLayeredWindowAttributes(hwnd, 0xFFFFFF, byte(1), winapi.LWA_ALPHA)
-			var err = h.PutWindowOnAnotherWindow(hwnd, rdClientHwnd)
-			if err != nil {
-				h.Debugf("%s", errors.Wrap(err, "windowProc"))
-			}
-			// winapi.ShowCursor(false)
-			return winapi.NULL
-		}
-
 		return win.DefWindowProc(hwnd, uMsg, wParam, lParam)
 	}
 }
