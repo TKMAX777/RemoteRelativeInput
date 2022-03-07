@@ -11,7 +11,10 @@ const (
 	LWA_ALPHA
 )
 
-func ClipCursor(rect win.RECT) (ok int, err error) {
+func ClipCursor(rect *win.RECT) (ok int, err error) {
+	if rect == nil {
+		return clipCursor(NULL)
+	}
 	return clipCursor(uintptr(unsafe.Pointer(&rect.Left)))
 }
 
