@@ -64,7 +64,7 @@ func (h *Handler) SendCursor(hwnd win.HWND) error {
 		return errors.New("Error in set cursor position")
 	}
 
-	okInt, _ := winapi.ClipCursor(rect)
+	okInt, _ := winapi.ClipCursor(&rect)
 	if okInt != 1 {
 		return errors.Errorf("Error in clip cursor: code: %d\n", win.GetLastError())
 	}
@@ -91,6 +91,8 @@ func (h *Handler) pointLoop(windowCenterPosition win.POINT) {
 		ok := winapi.GetCursorPos(&currentPosition)
 		if !ok {
 			log.Printf("Error in get cursor position\n")
+			winapi.ClipCursor(nil)
+			return
 		}
 
 		// Relative position mode
@@ -103,6 +105,8 @@ func (h *Handler) pointLoop(windowCenterPosition win.POINT) {
 		ok = win.SetCursorPos(windowCenterPosition.X, windowCenterPosition.Y)
 		if !ok {
 			log.Printf("Error in set cursor position")
+			winapi.ClipCursor(nil)
+			return
 		}
 
 		time.Sleep(time.Millisecond * 20)
@@ -140,7 +144,7 @@ func (h *Handler) CreateWindow(rdClientHwnd win.HWND) (win.HWND, error) {
 			// set window background color to white
 			HbrBackground: win.HBRUSH(win.GetStockObject(win.WHITE_BRUSH)),
 			LpszClassName: className,
-			LpfnWndProc:   syscall.NewCallback(win.DefWindowProc),
+			LpfnWndProc:   syscall.NewCallback(h.windowProc()),
 			LpszMenuName:  nil,
 
 			CbClsExtra: 0,
@@ -173,6 +177,7 @@ func (h *Handler) CreateWindow(rdClientHwnd win.HWND) (win.HWND, error) {
 		winapi.UpdateWindow(hwnd)
 
 		var windowProc = h.getMessage()
+		winapi.UpdateWindow(hwnd)
 
 		// Show window on RDP client with transparent style
 		winapi.SetLayeredWindowAttributes(hwnd, 0xFFFFFF, byte(1), winapi.LWA_ALPHA)
@@ -180,6 +185,7 @@ func (h *Handler) CreateWindow(rdClientHwnd win.HWND) (win.HWND, error) {
 		if err != nil {
 			h.Debugf("%s", errors.Wrap(err, "windowProc"))
 		}
+
 		// winapi.ShowCursor(false)
 
 		result <- resultAttr{hwnd, nil}
@@ -196,6 +202,7 @@ func (h *Handler) CreateWindow(rdClientHwnd win.HWND) (win.HWND, error) {
 			}
 
 			win.TranslateMessage(&msg)
+			win.DispatchMessage(&msg)
 			h.Output(10, fmt.Sprintf("disp: %+v \n", msg))
 			windowProc(msg)
 		}
@@ -355,6 +362,6 @@ func (h *Handler) PutWindowOnAnotherWindow(hwnd win.HWND, otherHWND win.HWND) er
 }
 
 func (h *Handler) Close() {
-	winapi.ClipCursor(win.RECT{})
+	winapi.ClipCursor(nil)
 	winapi.ShowCursor(true)
 }
