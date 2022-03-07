@@ -48,7 +48,7 @@ func (h *Handler) SetLogger(l logger) {
 }
 
 // Lock cursor to the window center and send cursor movement
-func (h *Handler) SendCursor(hwnd win.HWND) error {
+func (h *Handler) sendCursor(hwnd win.HWND) error {
 	if hwnd == win.HWND(winapi.NULL) {
 		return errors.New("NilWindowHandler")
 	}
@@ -68,8 +68,6 @@ func (h *Handler) SendCursor(hwnd win.HWND) error {
 	if okInt != 1 {
 		return errors.Errorf("Error in clip cursor: code: %d\n", win.GetLastError())
 	}
-
-	go h.pointLoop(windowCenterPosition)
 
 	return nil
 }
@@ -101,8 +99,8 @@ func (h *Handler) pointLoop(windowCenterPosition win.POINT) {
 			h.Debugf("X: %4d Y: %4d\n", pos.X, pos.Y)
 			h.remote.SendRelativeCursor(pos)
 		}
-
 		ok = win.SetCursorPos(windowCenterPosition.X, windowCenterPosition.Y)
+
 		if !ok {
 			log.Printf("Error in set cursor position")
 			winapi.ClipCursor(nil)
@@ -115,6 +113,10 @@ func (h *Handler) pointLoop(windowCenterPosition win.POINT) {
 
 // Create window on remote desktop client
 func (h *Handler) CreateWindow(rdClientHwnd win.HWND) (win.HWND, error) {
+	if rdClientHwnd == win.HWND(winapi.NULL) {
+		return win.HWND(winapi.NULL), errors.New("NilWindowHandler")
+	}
+
 	type resultAttr struct {
 		hwnd win.HWND
 		err  error
@@ -144,7 +146,7 @@ func (h *Handler) CreateWindow(rdClientHwnd win.HWND) (win.HWND, error) {
 			// set window background color to white
 			HbrBackground: win.HBRUSH(win.GetStockObject(win.WHITE_BRUSH)),
 			LpszClassName: className,
-			LpfnWndProc:   syscall.NewCallback(h.windowProc()),
+			LpfnWndProc:   syscall.NewCallback(win.DefWindowProc),
 			LpszMenuName:  nil,
 
 			CbClsExtra: 0,
@@ -171,13 +173,35 @@ func (h *Handler) CreateWindow(rdClientHwnd win.HWND) (win.HWND, error) {
 
 		if hwnd == win.HWND(winapi.NULL) {
 			result <- resultAttr{hwnd, errors.Errorf("CreateWindowEx: Failed to make window")}
+			return
 		}
 
 		winapi.ShowWindow(hwnd, win.SW_SHOW)
 		winapi.UpdateWindow(hwnd)
 
-		var windowProc = h.getMessage()
-		winapi.UpdateWindow(hwnd)
+		// clip cursor
+		var rect win.RECT
+		if !winapi.GetWindowRect(rdClientHwnd, &rect) {
+			result <- resultAttr{win.HWND(winapi.NULL), errors.New("GetWindowRectError")}
+			return
+		}
+
+		// set cursor position first
+		var windowCenterPosition = h.getWindowCenterPos(rect)
+		if !win.SetCursorPos(windowCenterPosition.X, windowCenterPosition.Y) {
+			result <- resultAttr{win.HWND(winapi.NULL), errors.New("Error in set cursor position")}
+			return
+		}
+
+		// then clip cursor
+		okInt, _ := winapi.ClipCursor(&rect)
+		if okInt != 1 {
+			result <- resultAttr{win.HWND(winapi.NULL), errors.Errorf("Error in clip cursor: code: %d\n", win.GetLastError())}
+			return
+		}
+
+		// get window proc
+		var windowProc = h.getMessage(windowCenterPosition)
 
 		// Show window on RDP client with transparent style
 		winapi.SetLayeredWindowAttributes(hwnd, 0xFFFFFF, byte(1), winapi.LWA_ALPHA)
@@ -214,7 +238,7 @@ func (h *Handler) CreateWindow(rdClientHwnd win.HWND) (win.HWND, error) {
 	return res.hwnd, res.err
 }
 
-func (h Handler) getMessage() func(msg win.MSG) error {
+func (h Handler) getMessage(windowCenterPosition win.POINT) func(msg win.MSG) error {
 	var send = func(key keymap.WindowsKey, state InputType) {
 		// temp
 		if key.EventInput == "F8" {
@@ -222,6 +246,9 @@ func (h Handler) getMessage() func(msg win.MSG) error {
 		}
 		h.remote.SendInput(KeyInput{key, state})
 	}
+
+	var pos POINT
+	var currentPosition = windowCenterPosition
 
 	return func(msg win.MSG) error {
 		var wParam = msg.WParam
@@ -231,6 +258,24 @@ func (h Handler) getMessage() func(msg win.MSG) error {
 		h.Output(10, fmt.Sprintf("%+v\n", msg))
 
 		switch msg.Message {
+		case win.WM_MOUSEMOVE:
+			ok := winapi.GetCursorPos(&currentPosition)
+			if !ok {
+				log.Printf("Error in get cursor position\n")
+			}
+			// Relative position mode
+			pos.POINT = win.POINT{X: currentPosition.X - windowCenterPosition.X, Y: currentPosition.Y - windowCenterPosition.Y}
+			if pos.X != 0 || pos.Y != 0 {
+				h.Debugf("X: %4d Y: %4d\n", pos.X, pos.Y)
+				h.remote.SendRelativeCursor(pos)
+
+				ok = win.SetCursorPos(windowCenterPosition.X, windowCenterPosition.Y)
+				if !ok {
+					log.Printf("Error in set cursor position")
+				}
+			}
+
+			return nil
 		case win.WA_CLICKACTIVE:
 			h.Debugf("WA_CLICKACTIVE\n")
 			return nil

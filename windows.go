@@ -26,15 +26,15 @@ func StartClient() {
 	var windowName = winapi.MustUTF16PtrFromString(os.Getenv("CLIENT_NAME"))
 	var rdHwnd = winapi.FindWindow(nil, windowName)
 
-	hwnd, err := wHandler.CreateWindow(rdHwnd)
+	_, err := wHandler.CreateWindow(rdHwnd)
 	if err != nil {
 		panic(err)
 	}
 
-	err = wHandler.SendCursor(hwnd)
-	if err != nil {
-		panic(err)
-	}
+	// err = wHandler.SendCursor(hwnd)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
 	fmt.Fprintln(os.Stderr, "Ready for sending messages")
 
