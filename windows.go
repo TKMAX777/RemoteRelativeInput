@@ -12,14 +12,17 @@ import (
 	"github.com/TKMAX777/RemoteRelativeInput/remote_send"
 	"github.com/TKMAX777/RemoteRelativeInput/winapi"
 	"github.com/TKMAX777/RemoteRelativeInput/windows"
+	"github.com/lxn/win"
 )
 
 func StartClient() {
+	win.MessageBox(win.HWND(winapi.NULL), winapi.MustUTF16PtrFromString("Click to start client"), winapi.MustUTF16PtrFromString("Confirmation"), win.MB_OK)
+
 	var rHandler = remote_send.New(os.Stdout)
 	var wHandler = windows.New(rHandler)
 
 	// wHandler.SetLogger(log.New(os.Stdout, "", 6))
-	var windowName = winapi.MustUTF16PtrFromString("192.168.100.82:10061 - リモート デスクトップ接続")
+	var windowName = winapi.MustUTF16PtrFromString(os.Getenv("CLIENT_NAME"))
 	var rdHwnd = winapi.FindWindow(nil, windowName)
 
 	hwnd, err := wHandler.CreateWindow(rdHwnd)

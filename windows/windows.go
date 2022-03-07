@@ -105,7 +105,7 @@ func (h *Handler) pointLoop(windowCenterPosition win.POINT) {
 			log.Printf("Error in set cursor position")
 		}
 
-		time.Sleep(time.Millisecond * 1)
+		time.Sleep(time.Millisecond * 10)
 	}
 }
 
@@ -202,13 +202,12 @@ func (h *Handler) CreateWindow(rdClientHwnd win.HWND) (win.HWND, error) {
 }
 
 func (h Handler) getMessage() func(msg win.MSG) error {
-	// var send = func(key keymap.WindowsKey, state InputType) {
-	// 	fmt.Printf("send: %s\n", key.EventInput)
-	// 	// input <- KeyInput{key, state}
-	// 	fmt.Printf("OK: %s\n", key.EventInput)
-	// }
-
 	var send = func(key keymap.WindowsKey, state InputType) {
+		// temp
+		if key.EventInput == "F8" {
+			os.Exit(0)
+		}
+
 		h.remote.SendInput(KeyInput{key, state})
 	}
 
@@ -244,7 +243,7 @@ func (h Handler) getMessage() func(msg win.MSG) error {
 			if err != nil {
 				h.Debugf("WM_SYSKEYDOWN: GetKeyError: %d\n", wParam)
 			} else {
-				h.logger.Output(4, fmt.Sprintf("WM_SYSKEYDOWN: wParam: %v lParam: %v\n", key.Constant, lParam))
+				h.Output(4, fmt.Sprintf("WM_SYSKEYDOWN: wParam: %v lParam: %v\n", key.Constant, lParam))
 			}
 			return nil
 		case win.WM_SYSKEYUP:
