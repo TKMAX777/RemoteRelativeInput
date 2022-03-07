@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/TKMAX777/LinuxRelativeInput/linuxapi"
+	"github.com/TKMAX777/RemoteRelativeInput/linuxapi"
 )
 
 func StartClient() {

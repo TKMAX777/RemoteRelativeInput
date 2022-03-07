@@ -1,4 +1,4 @@
-module github.com/TKMAX777/LinuxRelativeInput
+module github.com/TKMAX777/RemoteRelativeInput
 
 go 1.17
 

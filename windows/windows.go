@@ -8,11 +8,10 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/TKMAX777/RemoteRelativeInput/keymap"
+	"github.com/TKMAX777/RemoteRelativeInput/remote_send"
+	"github.com/TKMAX777/RemoteRelativeInput/winapi"
 	"github.com/pkg/errors"
-
-	"github.com/TKMAX777/LinuxRelativeInput/keymap"
-	"github.com/TKMAX777/LinuxRelativeInput/remote_send"
-	"github.com/TKMAX777/LinuxRelativeInput/winapi"
 
 	"github.com/lxn/win"
 )

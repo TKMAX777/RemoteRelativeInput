@@ -3,7 +3,7 @@ package windows
 import (
 	"fmt"
 
-	"github.com/TKMAX777/LinuxRelativeInput/keymap"
+	"github.com/TKMAX777/RemoteRelativeInput/keymap"
 )
 
 type KeyInput struct {

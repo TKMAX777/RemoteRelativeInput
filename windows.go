@@ -9,9 +9,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/TKMAX777/LinuxRelativeInput/remote_send"
-	"github.com/TKMAX777/LinuxRelativeInput/winapi"
-	"github.com/TKMAX777/LinuxRelativeInput/windows"
+	"github.com/TKMAX777/RemoteRelativeInput/remote_send"
+	"github.com/TKMAX777/RemoteRelativeInput/winapi"
+	"github.com/TKMAX777/RemoteRelativeInput/windows"
 )
 
 func StartClient() {
