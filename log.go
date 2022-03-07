@@ -1,1 +1,1 @@
-package main
+package relative_input

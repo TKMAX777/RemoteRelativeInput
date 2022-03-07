@@ -1,4 +1,7 @@
-package main
+//go:build windows
+// +build windows
+
+package relative_input
 
 import (
 	"fmt"
@@ -11,8 +14,7 @@ import (
 	"github.com/TKMAX777/LinuxRelativeInput/windows"
 )
 
-func main() {
-
+func StartClient() {
 	var rHandler = remote_send.New(os.Stdout)
 	var wHandler = windows.New(rHandler)
 
@@ -37,4 +39,8 @@ func main() {
 	<-sc
 
 	wHandler.Close()
+}
+
+func StartServer() {
+	// TODO: make windows relative input server
 }
