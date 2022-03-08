@@ -131,13 +131,6 @@ func (h *Handler) StartClient(rdClientHwnd win.HWND, toggleKey string) (win.HWND
 		winapi.ShowWindow(hwnd, win.SW_SHOW)
 		winapi.UpdateWindow(hwnd)
 
-		// get remote desktop client rect
-		// var rect win.RECT
-		// if !winapi.GetWindowRect(rdClientHwnd, &rect) {
-		// 	result <- resultAttr{win.HWND(winapi.NULL), errors.New("GetWindowRectError")}
-		// 	return
-		// }
-
 		winapi.SetLayeredWindowAttributes(hwnd, 0x0000FF, byte(1), winapi.LWA_COLORKEY)
 		h.initWindowAndCursor(hwnd, rdClientHwnd)
 
