@@ -2,7 +2,7 @@
 ## Abstruct
 This program is designed to allow relative input in an RDP (VNC) session by sending the client's input information using an SSH session. Currently only supported when connecting from Windows to a Linux machine.
 
-![sample](https://gyazo.com/4839dc45e6b93347d1770e9731536f93.gif)
+![sample](https://gyazo.com/5b6e57408136ba4fcebfd2525b7dc232.gif)
 
 ## install
 
