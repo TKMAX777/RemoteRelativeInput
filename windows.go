@@ -5,7 +5,6 @@ package relative_input
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -22,19 +21,19 @@ func StartClient() {
 	var rHandler = remote_send.New(os.Stdout)
 	var wHandler = windows.New(rHandler)
 
-	wHandler.SetLogger(log.New(os.Stderr, "", 10))
+	// wHandler.SetLogger(log.New(os.Stderr, "", 10))
 	var windowName = winapi.MustUTF16PtrFromString(os.Getenv("CLIENT_NAME"))
 	var rdHwnd = winapi.FindWindow(nil, windowName)
 
-	_, err := wHandler.CreateWindow(rdHwnd)
+	var toggleKey = os.Getenv("TOGGLE_KEY")
+	if toggleKey == "" {
+		toggleKey = "F8"
+	}
+
+	_, err := wHandler.StartClient(rdHwnd, toggleKey)
 	if err != nil {
 		panic(err)
 	}
-
-	// err = wHandler.SendCursor(hwnd)
-	// if err != nil {
-	// 	panic(err)
-	// }
 
 	fmt.Fprintln(os.Stderr, "Ready for sending messages")
 

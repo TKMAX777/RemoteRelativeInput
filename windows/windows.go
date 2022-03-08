@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime"
 	"syscall"
-	"time"
 	"unsafe"
 
 	"github.com/TKMAX777/RemoteRelativeInput/keymap"
@@ -47,31 +47,6 @@ func (h *Handler) SetLogger(l logger) {
 	h.logger = l
 }
 
-// Lock cursor to the window center and send cursor movement
-func (h *Handler) sendCursor(hwnd win.HWND) error {
-	if hwnd == win.HWND(winapi.NULL) {
-		return errors.New("NilWindowHandler")
-	}
-
-	var rect win.RECT
-	if !winapi.GetWindowRect(hwnd, &rect) {
-		return errors.New("GetWindowRectError")
-	}
-
-	var windowCenterPosition = h.getWindowCenterPos(rect)
-
-	if !win.SetCursorPos(windowCenterPosition.X, windowCenterPosition.Y) {
-		return errors.New("Error in set cursor position")
-	}
-
-	okInt, _ := winapi.ClipCursor(&rect)
-	if okInt != 1 {
-		return errors.Errorf("Error in clip cursor: code: %d\n", win.GetLastError())
-	}
-
-	return nil
-}
-
 func (h *Handler) getWindowCenterPos(rect win.RECT) win.POINT {
 	var windowCenterPosition win.POINT
 	windowCenterPosition.X = int32(rect.Left+rect.Right) / 2
@@ -80,39 +55,9 @@ func (h *Handler) getWindowCenterPos(rect win.RECT) win.POINT {
 	return windowCenterPosition
 }
 
-// lock cursor and send cursor movement to the channel
-func (h *Handler) pointLoop(windowCenterPosition win.POINT) {
-	var pos POINT
-	var currentPosition = windowCenterPosition
-
-	for {
-		ok := winapi.GetCursorPos(&currentPosition)
-		if !ok {
-			log.Printf("Error in get cursor position\n")
-			winapi.ClipCursor(nil)
-			return
-		}
-
-		// Relative position mode
-		pos.POINT = win.POINT{X: currentPosition.X - windowCenterPosition.X, Y: currentPosition.Y - windowCenterPosition.Y}
-		if pos.X != 0 || pos.Y != 0 {
-			h.Debugf("X: %4d Y: %4d\n", pos.X, pos.Y)
-			h.remote.SendRelativeCursor(pos)
-		}
-		ok = win.SetCursorPos(windowCenterPosition.X, windowCenterPosition.Y)
-
-		if !ok {
-			log.Printf("Error in set cursor position")
-			winapi.ClipCursor(nil)
-			return
-		}
-
-		time.Sleep(time.Millisecond * 20)
-	}
-}
-
 // Create window on remote desktop client
-func (h *Handler) CreateWindow(rdClientHwnd win.HWND) (win.HWND, error) {
+// rdClientHwnd must be remote desktop client hwnd, and toggleKey is a keyname for toggle wrapper mode
+func (h *Handler) StartClient(rdClientHwnd win.HWND, toggleKey string) (win.HWND, error) {
 	if rdClientHwnd == win.HWND(winapi.NULL) {
 		return win.HWND(winapi.NULL), errors.New("NilWindowHandler")
 	}
@@ -135,6 +80,13 @@ func (h *Handler) CreateWindow(rdClientHwnd win.HWND) (win.HWND, error) {
 
 		var className = winapi.MustUTF16PtrFromString(windowName)
 
+		// get window proc
+		var windowProc = h.getWindowProc(rdClientHwnd, toggleKey)
+
+		// lock os thread to avoid hanging GetMessage
+		runtime.LockOSThread()
+		defer runtime.UnlockOSThread()
+
 		var wClass win.WNDCLASSEX
 		wClass = win.WNDCLASSEX{
 			CbSize:    uint32(unsafe.Sizeof(wClass)),
@@ -146,7 +98,7 @@ func (h *Handler) CreateWindow(rdClientHwnd win.HWND) (win.HWND, error) {
 			// set window background color to white
 			HbrBackground: win.HBRUSH(win.GetStockObject(win.WHITE_BRUSH)),
 			LpszClassName: className,
-			LpfnWndProc:   syscall.NewCallback(win.DefWindowProc),
+			LpfnWndProc:   syscall.NewCallback(windowProc),
 			LpszMenuName:  nil,
 
 			CbClsExtra: 0,
@@ -179,36 +131,14 @@ func (h *Handler) CreateWindow(rdClientHwnd win.HWND) (win.HWND, error) {
 		winapi.ShowWindow(hwnd, win.SW_SHOW)
 		winapi.UpdateWindow(hwnd)
 
-		// clip cursor
+		// get remote desktop client rect
 		var rect win.RECT
 		if !winapi.GetWindowRect(rdClientHwnd, &rect) {
 			result <- resultAttr{win.HWND(winapi.NULL), errors.New("GetWindowRectError")}
 			return
 		}
 
-		// set cursor position first
-		var windowCenterPosition = h.getWindowCenterPos(rect)
-		if !win.SetCursorPos(windowCenterPosition.X, windowCenterPosition.Y) {
-			result <- resultAttr{win.HWND(winapi.NULL), errors.New("Error in set cursor position")}
-			return
-		}
-
-		// then clip cursor
-		okInt, _ := winapi.ClipCursor(&rect)
-		if okInt != 1 {
-			result <- resultAttr{win.HWND(winapi.NULL), errors.Errorf("Error in clip cursor: code: %d\n", win.GetLastError())}
-			return
-		}
-
-		// get window proc
-		var windowProc = h.getMessage(windowCenterPosition)
-
-		// Show window on RDP client with transparent style
-		winapi.SetLayeredWindowAttributes(hwnd, 0xFFFFFF, byte(1), winapi.LWA_ALPHA)
-		var err = h.PutWindowOnAnotherWindow(hwnd, rdClientHwnd)
-		if err != nil {
-			h.Debugf("%s", errors.Wrap(err, "windowProc"))
-		}
+		h.initWindowAndCursor(hwnd, rdClientHwnd)
 
 		// winapi.ShowCursor(false)
 
@@ -221,14 +151,13 @@ func (h *Handler) CreateWindow(rdClientHwnd win.HWND) (win.HWND, error) {
 				h.Debugln("Quit")
 				return
 			case -1:
-				fmt.Fprintln(os.Stderr, "GetMessageErrorOccured")
+				os.Exit(0)
 				return
 			}
 
 			win.TranslateMessage(&msg)
 			win.DispatchMessage(&msg)
 			h.Output(10, fmt.Sprintf("disp: %+v \n", msg))
-			windowProc(msg)
 		}
 	}()
 
@@ -238,57 +167,126 @@ func (h *Handler) CreateWindow(rdClientHwnd win.HWND) (win.HWND, error) {
 	return res.hwnd, res.err
 }
 
-func (h Handler) getMessage(windowCenterPosition win.POINT) func(msg win.MSG) error {
-	var send = func(key keymap.WindowsKey, state InputType) {
-		// temp
-		if key.EventInput == "F8" {
-			os.Exit(0)
-		}
-		h.remote.SendInput(KeyInput{key, state})
+func (h Handler) initWindowAndCursor(hwnd, rdClientHwnd win.HWND) error {
+	// get remote desktop client rect
+	var rect win.RECT
+	if !winapi.GetWindowRect(rdClientHwnd, &rect) {
+		return errors.New("GetWindowRectError")
 	}
 
+	// get remote desktop client center position
+	var windowCenterPosition = h.getWindowCenterPos(rect)
+
+	// set cursot to center of the remote desktop client window
+	if !win.SetCursorPos(windowCenterPosition.X, windowCenterPosition.Y) {
+		return errors.New("Error in set cursor position")
+	}
+
+	// then clip cursor
+	okInt, _ := winapi.ClipCursor(&rect)
+	if okInt != 1 {
+		return errors.Errorf("Error in clip cursor: code: %d\n", win.GetLastError())
+	}
+
+	// Show window on RDP client with transparent style
+	winapi.SetLayeredWindowAttributes(hwnd, 0xFFFFFF, byte(1), winapi.LWA_ALPHA)
+	var err = h.PutWindowOnAnotherWindow(hwnd, rdClientHwnd)
+	if err != nil {
+		return errors.Wrap(err, "PutWindowOnAnotherWindow")
+	}
+
+	winapi.ShowCursor(false)
+
+	return nil
+}
+
+func (h Handler) getWindowProc(rdClientHwnd win.HWND, toggleKey string) func(hwnd win.HWND, uMsg uint32, wParam uintptr, lParam uintptr) uintptr {
+	var isRelativeMode = true
+
 	var pos POINT
+
+	// get remote desktop client rect
+	var rect win.RECT
+	if !winapi.GetWindowRect(rdClientHwnd, &rect) {
+		fmt.Fprintf(os.Stderr, "getWindowProc: GetWindowRectError")
+	}
+
+	// get remote desktop client center position
+	var windowCenterPosition = h.getWindowCenterPos(rect)
+
 	var currentPosition = windowCenterPosition
 
-	return func(msg win.MSG) error {
-		var wParam = msg.WParam
-		var lParam = msg.LParam
+	return func(hwnd win.HWND, uMsg uint32, wParam uintptr, lParam uintptr) uintptr {
+		var send = func(key keymap.WindowsKey, state InputType) {
+			// toggle window mode
+			if key.EventInput == toggleKey && state == KeyDown {
+				isRelativeMode = !isRelativeMode
+				if isRelativeMode {
+					winapi.SetLayeredWindowAttributes(hwnd, 0xFFFFFF, byte(1), winapi.LWA_ALPHA)
+					winapi.UpdateWindow(hwnd)
 
-		h.Output(10, fmt.Sprintf("%X(%d) ", msg.Message, msg.Message))
-		h.Output(10, fmt.Sprintf("%+v\n", msg))
+					h.initWindowAndCursor(hwnd, rdClientHwnd)
 
-		switch msg.Message {
-		case win.WM_MOUSEMOVE:
-			ok := winapi.GetCursorPos(&currentPosition)
-			if !ok {
-				log.Printf("Error in get cursor position\n")
+					// get remote desktop client rect
+					var rect win.RECT
+					if !winapi.GetWindowRect(rdClientHwnd, &rect) {
+						fmt.Fprintf(os.Stderr, "getWindowProc: GetWindowRectError")
+					}
+
+					// get remote desktop client center position
+					windowCenterPosition = h.getWindowCenterPos(rect)
+
+				} else {
+					var ps = new(win.PAINTSTRUCT)
+					var hdc = win.BeginPaint(hwnd, ps)
+					var hBrush = winapi.CreateSolidBrush(0x000000FF)
+
+					win.SelectObject(hdc, hBrush)
+					winapi.ExtFloodFill(hdc, 1, 1, 0xFFFFFF, winapi.FLOODFILLSURFACE)
+					win.DeleteObject(hBrush)
+					win.EndPaint(hwnd, ps)
+
+					winapi.SetLayeredWindowAttributes(hwnd, 0xFFFFFF, byte(255), winapi.LWA_ALPHA)
+					winapi.SetLayeredWindowAttributes(hwnd, 0x0000FF, byte(0), winapi.LWA_COLORKEY)
+					winapi.UpdateWindow(hwnd)
+
+					winapi.ShowCursor(true)
+					winapi.ClipCursor(nil)
+				}
 			}
-			// Relative position mode
-			pos.POINT = win.POINT{X: currentPosition.X - windowCenterPosition.X, Y: currentPosition.Y - windowCenterPosition.Y}
-			if pos.X != 0 || pos.Y != 0 {
-				h.Debugf("X: %4d Y: %4d\n", pos.X, pos.Y)
-				h.remote.SendRelativeCursor(pos)
+			if isRelativeMode {
+				h.remote.SendInput(KeyInput{key, state})
+			}
+		}
 
-				ok = win.SetCursorPos(windowCenterPosition.X, windowCenterPosition.Y)
+		h.Output(10, fmt.Sprintf("%X(%d) ", uMsg, uMsg))
+
+		switch uMsg {
+		case win.WM_MOUSEMOVE:
+			if isRelativeMode {
+				ok := winapi.GetCursorPos(&currentPosition)
 				if !ok {
-					log.Printf("Error in set cursor position")
+					log.Printf("Error in get cursor position\n")
+				}
+				// Relative position mode
+				pos.POINT = win.POINT{X: currentPosition.X - windowCenterPosition.X, Y: currentPosition.Y - windowCenterPosition.Y}
+				if pos.X != 0 || pos.Y != 0 {
+					h.Debugf("X: %4d Y: %4d\n", pos.X, pos.Y)
+					h.remote.SendRelativeCursor(pos)
+
+					ok = win.SetCursorPos(windowCenterPosition.X, windowCenterPosition.Y)
+					if !ok {
+						log.Printf("Error in set cursor position")
+					}
 				}
 			}
 
-			return nil
+			return winapi.NULL
 		case win.WA_CLICKACTIVE:
 			h.Debugf("WA_CLICKACTIVE\n")
-			return nil
+			return winapi.NULL
 		case win.WM_PAINT:
-			// var ps = new(win.PAINTSTRUCT)
-			// var hdc = win.BeginPaint(hwnd, ps)
-			// var hBrush = winapi.CreateSolidBrush(0x00FFFFFF)
-
-			// win.SelectObject(hdc, hBrush)
-			// winapi.ExtFloodFill(hdc, 1, 1, 0xFFFFFF, winapi.FLOODFILLSURFACE)
-			// win.DeleteObject(hBrush)
-			// win.EndPaint(hwnd, ps)
-			return nil
+			return winapi.NULL
 		case win.WM_SYSKEYDOWN:
 			if lParam>>30&1 == 0 {
 				key, err := keymap.GetWindowsKeyDetail(uint32(wParam))
@@ -302,7 +300,7 @@ func (h Handler) getMessage(windowCenterPosition win.POINT) func(msg win.MSG) er
 			} else {
 				h.Output(4, fmt.Sprintf("WM_SYSKEYDOWN: wParam: %v lParam: %v\n", key.Constant, lParam))
 			}
-			return nil
+			return winapi.NULL
 		case win.WM_SYSKEYUP:
 			key, err := keymap.GetWindowsKeyDetail(uint32(wParam))
 			if err == nil {
@@ -311,7 +309,7 @@ func (h Handler) getMessage(windowCenterPosition win.POINT) func(msg win.MSG) er
 			} else {
 				h.Debugf("WM_SYSKEYUP: GetKeyError: %d\n", wParam)
 			}
-			return nil
+			return winapi.NULL
 		case win.WM_KEYDOWN:
 			if lParam>>30&1 == 0 {
 				key, err := keymap.GetWindowsKeyDetail(uint32(wParam))
@@ -325,7 +323,7 @@ func (h Handler) getMessage(windowCenterPosition win.POINT) func(msg win.MSG) er
 			} else {
 				h.Output(4, fmt.Sprintf("WM_KEYDOWN: wParam: %v lParam: %v\n", key.Constant, lParam))
 			}
-			return nil
+			return winapi.NULL
 		case win.WM_KEYUP:
 			key, err := keymap.GetWindowsKeyDetail(uint32(wParam))
 			if err == nil {
@@ -334,7 +332,7 @@ func (h Handler) getMessage(windowCenterPosition win.POINT) func(msg win.MSG) er
 			} else {
 				h.Debugf("WM_KEYUP: GetKeyError: %d\n", wParam)
 			}
-			return nil
+			return winapi.NULL
 		case win.WM_MOUSEWHEEL:
 			if int16(wParam>>16) > 0 {
 				send(keymap.WindowsKey{Constant: "WheelUp", EventType: "EV_MOUSE", EventInput: "wheel"}, KeyUp)
@@ -343,46 +341,40 @@ func (h Handler) getMessage(windowCenterPosition win.POINT) func(msg win.MSG) er
 				send(keymap.WindowsKey{Constant: "WheelDown", EventType: "EV_MOUSE", EventInput: "wheel"}, KeyDown)
 				h.Output(4, "WM_MOUSEWHEEL DOWN")
 			}
-			return nil
+			return winapi.NULL
 		case win.WM_LBUTTONUP:
 			key, _ := keymap.GetWindowsKeyDetail(0x01)
 			send(*key, KeyUp)
 			h.Output(4, "WM_LBUTTONUP UP\n")
-			return nil
+			return winapi.NULL
 		case win.WM_LBUTTONDOWN:
 			key, _ := keymap.GetWindowsKeyDetail(0x01)
 			send(*key, KeyDown)
 			h.Output(4, "WM_LBUTTONUP DOWN\n")
-			return nil
+			return winapi.NULL
 		case win.WM_RBUTTONUP:
 			key, _ := keymap.GetWindowsKeyDetail(0x02)
 			send(*key, KeyUp)
 			h.Output(4, "WM_RBUTTONUP UP\n")
-			return nil
+			return winapi.NULL
 		case win.WM_RBUTTONDOWN:
 			key, _ := keymap.GetWindowsKeyDetail(0x02)
 			send(*key, KeyDown)
 			h.Output(4, "WM_RBUTTONDOWN DOWN\n")
-			return nil
+			return winapi.NULL
 		case win.WM_MBUTTONUP:
 			key, _ := keymap.GetWindowsKeyDetail(0x04)
 			send(*key, KeyUp)
 			h.Output(4, "WM_RBUTTONUP UP\n")
-			return nil
+			return winapi.NULL
 		case win.WM_MBUTTONDOWN:
 			key, _ := keymap.GetWindowsKeyDetail(0x02)
 			send(*key, KeyDown)
 			h.Output(4, "WM_MBUTTONDOWN DOWN\n")
-			return nil
+			return winapi.NULL
 		default:
-			return nil
+			return win.DefWindowProc(hwnd, uMsg, wParam, lParam)
 		}
-	}
-}
-
-func (h Handler) windowProc() func(hwnd win.HWND, uMsg uint32, wParam uintptr, lParam uintptr) uintptr {
-	return func(hwnd win.HWND, uMsg uint32, wParam uintptr, lParam uintptr) uintptr {
-		return win.DefWindowProc(hwnd, uMsg, wParam, lParam)
 	}
 }
 
