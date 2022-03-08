@@ -132,12 +132,13 @@ func (h *Handler) StartClient(rdClientHwnd win.HWND, toggleKey string) (win.HWND
 		winapi.UpdateWindow(hwnd)
 
 		// get remote desktop client rect
-		var rect win.RECT
-		if !winapi.GetWindowRect(rdClientHwnd, &rect) {
-			result <- resultAttr{win.HWND(winapi.NULL), errors.New("GetWindowRectError")}
-			return
-		}
+		// var rect win.RECT
+		// if !winapi.GetWindowRect(rdClientHwnd, &rect) {
+		// 	result <- resultAttr{win.HWND(winapi.NULL), errors.New("GetWindowRectError")}
+		// 	return
+		// }
 
+		winapi.SetLayeredWindowAttributes(hwnd, 0x0000FF, byte(1), winapi.LWA_COLORKEY)
 		h.initWindowAndCursor(hwnd, rdClientHwnd)
 
 		// winapi.ShowCursor(false)
@@ -168,6 +169,23 @@ func (h *Handler) StartClient(rdClientHwnd win.HWND, toggleKey string) (win.HWND
 }
 
 func (h Handler) initWindowAndCursor(hwnd, rdClientHwnd win.HWND) error {
+	// Set window on RDP client window
+	if !win.SetForegroundWindow(hwnd) {
+		return errors.New("SetForegroundWindow: failed to get foreground permission")
+	}
+
+	var crectAbs win.RECT
+	if !winapi.GetWindowRect(rdClientHwnd, &crectAbs) {
+		return errors.New("GetWindowRectError")
+	}
+
+	if !win.SetWindowPos(hwnd, 0,
+		crectAbs.Left, crectAbs.Top, crectAbs.Right-crectAbs.Left, crectAbs.Bottom-crectAbs.Top,
+		win.SWP_SHOWWINDOW,
+	) {
+		return errors.New("SetWindowPos: failed to set window pos")
+	}
+
 	// get remote desktop client rect
 	var rect win.RECT
 	if !winapi.GetWindowRect(rdClientHwnd, &rect) {
@@ -188,21 +206,12 @@ func (h Handler) initWindowAndCursor(hwnd, rdClientHwnd win.HWND) error {
 		return errors.Errorf("Error in clip cursor: code: %d\n", win.GetLastError())
 	}
 
-	// Show window on RDP client with transparent style
-	winapi.SetLayeredWindowAttributes(hwnd, 0xFFFFFF, byte(1), winapi.LWA_ALPHA)
-	var err = h.PutWindowOnAnotherWindow(hwnd, rdClientHwnd)
-	if err != nil {
-		return errors.Wrap(err, "PutWindowOnAnotherWindow")
-	}
-
 	winapi.ShowCursor(false)
 
 	return nil
 }
 
 func (h Handler) getWindowProc(rdClientHwnd win.HWND, toggleKey string) func(hwnd win.HWND, uMsg uint32, wParam uintptr, lParam uintptr) uintptr {
-	var isRelativeMode = true
-
 	var pos POINT
 
 	// get remote desktop client rect
@@ -210,6 +219,8 @@ func (h Handler) getWindowProc(rdClientHwnd win.HWND, toggleKey string) func(hwn
 	if !winapi.GetWindowRect(rdClientHwnd, &rect) {
 		fmt.Fprintf(os.Stderr, "getWindowProc: GetWindowRectError")
 	}
+
+	var isRelativeMode = true
 
 	// get remote desktop client center position
 	var windowCenterPosition = h.getWindowCenterPos(rect)
@@ -222,33 +233,20 @@ func (h Handler) getWindowProc(rdClientHwnd win.HWND, toggleKey string) func(hwn
 			if key.EventInput == toggleKey && state == KeyDown {
 				isRelativeMode = !isRelativeMode
 				if isRelativeMode {
-					winapi.SetLayeredWindowAttributes(hwnd, 0xFFFFFF, byte(1), winapi.LWA_ALPHA)
-					winapi.UpdateWindow(hwnd)
-
 					h.initWindowAndCursor(hwnd, rdClientHwnd)
-
-					// get remote desktop client rect
-					var rect win.RECT
-					if !winapi.GetWindowRect(rdClientHwnd, &rect) {
-						fmt.Fprintf(os.Stderr, "getWindowProc: GetWindowRectError")
+				} else {
+					var crectAbs win.RECT
+					if !winapi.GetWindowRect(rdClientHwnd, &crectAbs) {
+						fmt.Fprintf(os.Stderr, "GetWindowRectError")
 					}
 
-					// get remote desktop client center position
-					windowCenterPosition = h.getWindowCenterPos(rect)
-
-				} else {
-					var ps = new(win.PAINTSTRUCT)
-					var hdc = win.BeginPaint(hwnd, ps)
-					var hBrush = winapi.CreateSolidBrush(0x000000FF)
-
-					win.SelectObject(hdc, hBrush)
-					winapi.ExtFloodFill(hdc, 1, 1, 0xFFFFFF, winapi.FLOODFILLSURFACE)
-					win.DeleteObject(hBrush)
-					win.EndPaint(hwnd, ps)
-
-					winapi.SetLayeredWindowAttributes(hwnd, 0xFFFFFF, byte(255), winapi.LWA_ALPHA)
-					winapi.SetLayeredWindowAttributes(hwnd, 0x0000FF, byte(0), winapi.LWA_COLORKEY)
-					winapi.UpdateWindow(hwnd)
+					// show window title only
+					if !win.SetWindowPos(hwnd, 0,
+						crectAbs.Left, crectAbs.Top, crectAbs.Right-crectAbs.Left, h.metrics.TitleHeight+h.metrics.FrameWidthY*2,
+						win.SWP_SHOWWINDOW,
+					) {
+						fmt.Fprintf(os.Stderr, "SetWindowPos: failed to set window pos")
+					}
 
 					winapi.ShowCursor(true)
 					winapi.ClipCursor(nil)
@@ -262,6 +260,33 @@ func (h Handler) getWindowProc(rdClientHwnd win.HWND, toggleKey string) func(hwn
 		h.Output(10, fmt.Sprintf("%X(%d) ", uMsg, uMsg))
 
 		switch uMsg {
+		case win.WM_CREATE:
+			win.UpdateWindow(hwnd)
+			return winapi.NULL
+		case win.WM_PAINT:
+			fmt.Fprintln(os.Stderr, "called wm_paint")
+			var ps = new(win.PAINTSTRUCT)
+			var hdc = win.BeginPaint(hwnd, ps)
+			var hBrush = winapi.CreateSolidBrush(0x000000FF)
+
+			win.SelectObject(hdc, hBrush)
+			winapi.ExtFloodFill(hdc, 1, 1, 0xFFFFFF, winapi.FLOODFILLSURFACE)
+			win.DeleteObject(hBrush)
+			win.EndPaint(hwnd, ps)
+
+			if isRelativeMode {
+				winapi.SetLayeredWindowAttributes(hwnd, 0x0000FF, byte(1), winapi.LWA_COLORKEY)
+
+				// get remote desktop client rect
+				var rect win.RECT
+				if !winapi.GetWindowRect(rdClientHwnd, &rect) {
+					fmt.Fprintf(os.Stderr, "getWindowProc: GetWindowRectError")
+				}
+
+				// get remote desktop client center position
+				windowCenterPosition = h.getWindowCenterPos(rect)
+			}
+			return winapi.NULL
 		case win.WM_MOUSEMOVE:
 			if isRelativeMode {
 				ok := winapi.GetCursorPos(&currentPosition)
@@ -284,8 +309,6 @@ func (h Handler) getWindowProc(rdClientHwnd win.HWND, toggleKey string) func(hwn
 			return winapi.NULL
 		case win.WA_CLICKACTIVE:
 			h.Debugf("WA_CLICKACTIVE\n")
-			return winapi.NULL
-		case win.WM_PAINT:
 			return winapi.NULL
 		case win.WM_SYSKEYDOWN:
 			if lParam>>30&1 == 0 {
@@ -379,21 +402,6 @@ func (h Handler) getWindowProc(rdClientHwnd win.HWND, toggleKey string) func(hwn
 }
 
 func (h *Handler) PutWindowOnAnotherWindow(hwnd win.HWND, otherHWND win.HWND) error {
-	if !win.SetForegroundWindow(hwnd) {
-		return errors.New("SetForegroundWindow: failed to get foreground permission")
-	}
-
-	var crectAbs win.RECT
-	if !winapi.GetWindowRect(otherHWND, &crectAbs) {
-		return errors.New("GetWindowRectError")
-	}
-
-	if !win.SetWindowPos(hwnd, 0,
-		crectAbs.Left, crectAbs.Top, crectAbs.Right-crectAbs.Left, crectAbs.Bottom-crectAbs.Top,
-		win.SWP_SHOWWINDOW,
-	) {
-		return errors.New("SetWindowPos: failed to set window pos")
-	}
 
 	return nil
 }
