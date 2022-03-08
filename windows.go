@@ -5,7 +5,6 @@ package relative_input
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -22,7 +21,7 @@ func StartClient() {
 	var rHandler = remote_send.New(os.Stdout)
 	var wHandler = windows.New(rHandler)
 
-	wHandler.SetLogger(log.New(os.Stderr, "", 10))
+	// wHandler.SetLogger(log.New(os.Stderr, "", 10))
 	var windowName = winapi.MustUTF16PtrFromString(os.Getenv("CLIENT_NAME"))
 	var rdHwnd = winapi.FindWindow(nil, windowName)
 
