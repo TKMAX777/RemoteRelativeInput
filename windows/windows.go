@@ -257,7 +257,6 @@ func (h Handler) getWindowProc(rdClientHwnd win.HWND, toggleKey string) func(hwn
 			win.UpdateWindow(hwnd)
 			return winapi.NULL
 		case win.WM_PAINT:
-			fmt.Fprintln(os.Stderr, "called wm_paint")
 			var ps = new(win.PAINTSTRUCT)
 			var hdc = win.BeginPaint(hwnd, ps)
 			var hBrush = winapi.CreateSolidBrush(0x000000FF)
