@@ -26,4 +26,4 @@ CLIENT_NAME="192.168.***.*** - Remote Desktop" RelativeInputClient | ssh 192.168
 CLIENT_NAME="192.168.***.*** - Remote Desktop" RelativeInputClient | ssh 192.168.***.*** /home/<UserName>/go/bin/RelativeInputServer
 ```
 
-- You can toggle relative or absolute by F8 key
+- Pressing the F8 key toggles between relative and absolute input
