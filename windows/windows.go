@@ -393,11 +393,6 @@ func (h Handler) getWindowProc(rdClientHwnd win.HWND, toggleKey string) func(hwn
 	}
 }
 
-func (h *Handler) PutWindowOnAnotherWindow(hwnd win.HWND, otherHWND win.HWND) error {
-
-	return nil
-}
-
 func (h *Handler) Close() {
 	winapi.ClipCursor(nil)
 	winapi.ShowCursor(true)
