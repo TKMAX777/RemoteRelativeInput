@@ -26,9 +26,9 @@ func StartClient() {
 		toggleKey = "F8"
 	}
 
-	var toggleType = os.Getenv("ToggleType")
+	var toggleType = os.Getenv("TOGGLE_TYPE")
 	switch toggleType {
-	case "TOGGLE_TYPE_ONCE":
+	case "ONCE":
 		wHandler.SetToggleType(windows.ToggleTypeOnce)
 	default:
 		wHandler.SetToggleType(windows.ToggleTypeAlive)
