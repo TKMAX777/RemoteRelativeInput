@@ -21,16 +21,26 @@ func StartClient() {
 	var rHandler = remote_send.New(os.Stdout)
 	var wHandler = windows.New(rHandler)
 
-	// wHandler.SetLogger(log.New(os.Stderr, "", 10))
-	var windowName = winapi.MustUTF16PtrFromString(os.Getenv("CLIENT_NAME"))
-	var rdHwnd = winapi.FindWindow(nil, windowName)
-
 	var toggleKey = os.Getenv("TOGGLE_KEY")
 	if toggleKey == "" {
 		toggleKey = "F8"
 	}
 
-	_, err := wHandler.StartClient(rdHwnd, toggleKey)
+	var toggleType = os.Getenv("ToggleType")
+	switch toggleType {
+	case "TOGGLE_TYPE_ONCE":
+		wHandler.SetToggleType(windows.ToggleTypeOnce)
+	default:
+		wHandler.SetToggleType(windows.ToggleTypeAlive)
+	}
+
+	wHandler.SetToggleKey(toggleKey)
+	// wHandler.SetLogger(log.New(os.Stderr, "", 10))
+
+	var windowName = winapi.MustUTF16PtrFromString(os.Getenv("CLIENT_NAME"))
+	var rdHwnd = winapi.FindWindow(nil, windowName)
+
+	_, err := wHandler.StartClient(rdHwnd)
 	if err != nil {
 		panic(err)
 	}

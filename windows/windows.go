@@ -18,11 +18,23 @@ import (
 
 type Handler struct {
 	metrics SystemMetrics
-
-	remote *remote_send.Handler
+	options option
+	remote  *remote_send.Handler
 
 	logger logger
 	debug  bool
+}
+
+type ToggleType int
+
+const (
+	ToggleTypeOnce ToggleType = iota + 1
+	ToggleTypeAlive
+)
+
+type option struct {
+	toggleKey  string
+	toggleType ToggleType
 }
 
 type SystemMetrics struct {
@@ -34,6 +46,11 @@ type SystemMetrics struct {
 func New(r *remote_send.Handler) *Handler {
 	return &Handler{
 		remote: r,
+		options: option{
+			// set default options
+			toggleKey:  "F8",
+			toggleType: ToggleTypeAlive,
+		},
 		metrics: SystemMetrics{
 			FrameWidthX: win.GetSystemMetrics(win.SM_CXSIZEFRAME),
 			FrameWidthY: win.GetSystemMetrics(win.SM_CYSIZEFRAME),
@@ -47,7 +64,19 @@ func (h *Handler) SetLogger(l logger) {
 	h.logger = l
 }
 
-func (h *Handler) getWindowCenterPos(rect win.RECT) win.POINT {
+func (h *Handler) SetToggleKey(k string) error {
+	if k == "" {
+		return errors.New("NotSpecified")
+	}
+	h.options.toggleKey = k
+	return nil
+}
+
+func (h *Handler) SetToggleType(t ToggleType) {
+	h.options.toggleType = t
+}
+
+func (h Handler) getWindowCenterPos(rect win.RECT) win.POINT {
 	var windowCenterPosition win.POINT
 	windowCenterPosition.X = int32(rect.Left+rect.Right) / 2
 	windowCenterPosition.Y = int32(rect.Top+rect.Bottom) / 2
@@ -57,7 +86,7 @@ func (h *Handler) getWindowCenterPos(rect win.RECT) win.POINT {
 
 // Create window on remote desktop client
 // rdClientHwnd must be remote desktop client hwnd, and toggleKey is a keyname for toggle wrapper mode
-func (h *Handler) StartClient(rdClientHwnd win.HWND, toggleKey string) (win.HWND, error) {
+func (h Handler) StartClient(rdClientHwnd win.HWND) (win.HWND, error) {
 	if rdClientHwnd == win.HWND(winapi.NULL) {
 		return win.HWND(winapi.NULL), errors.New("NilWindowHandler")
 	}
@@ -81,7 +110,7 @@ func (h *Handler) StartClient(rdClientHwnd win.HWND, toggleKey string) (win.HWND
 		var className = winapi.MustUTF16PtrFromString(windowName)
 
 		// get window proc
-		var windowProc = h.getWindowProc(rdClientHwnd, toggleKey)
+		var windowProc = h.getWindowProc(rdClientHwnd)
 
 		// lock os thread to avoid hanging GetMessage
 		runtime.LockOSThread()
@@ -130,11 +159,6 @@ func (h *Handler) StartClient(rdClientHwnd win.HWND, toggleKey string) (win.HWND
 
 		winapi.ShowWindow(hwnd, win.SW_SHOW)
 		winapi.UpdateWindow(hwnd)
-
-		winapi.SetLayeredWindowAttributes(hwnd, 0x0000FF, byte(1), winapi.LWA_COLORKEY)
-		h.initWindowAndCursor(hwnd, rdClientHwnd)
-
-		// winapi.ShowCursor(false)
 
 		result <- resultAttr{hwnd, nil}
 
@@ -204,7 +228,7 @@ func (h Handler) initWindowAndCursor(hwnd, rdClientHwnd win.HWND) error {
 	return nil
 }
 
-func (h Handler) getWindowProc(rdClientHwnd win.HWND, toggleKey string) func(hwnd win.HWND, uMsg uint32, wParam uintptr, lParam uintptr) uintptr {
+func (h Handler) getWindowProc(rdClientHwnd win.HWND) func(hwnd win.HWND, uMsg uint32, wParam uintptr, lParam uintptr) uintptr {
 	var pos POINT
 
 	// get remote desktop client rect
@@ -223,8 +247,16 @@ func (h Handler) getWindowProc(rdClientHwnd win.HWND, toggleKey string) func(hwn
 	return func(hwnd win.HWND, uMsg uint32, wParam uintptr, lParam uintptr) uintptr {
 		var send = func(key keymap.WindowsKey, state InputType) {
 			// toggle window mode
-			if key.EventInput == toggleKey && state == KeyDown {
-				isRelativeMode = !isRelativeMode
+			if key.EventInput == h.options.toggleKey {
+				switch state {
+				case KeyDown:
+					isRelativeMode = !isRelativeMode || h.options.toggleType == ToggleTypeOnce
+				case KeyUp:
+					if h.options.toggleType == ToggleTypeOnce {
+						isRelativeMode = false
+					}
+				}
+
 				if isRelativeMode {
 					h.initWindowAndCursor(hwnd, rdClientHwnd)
 				} else {
@@ -254,7 +286,10 @@ func (h Handler) getWindowProc(rdClientHwnd win.HWND, toggleKey string) func(hwn
 
 		switch uMsg {
 		case win.WM_CREATE:
+			winapi.SetLayeredWindowAttributes(hwnd, 0x0000FF, byte(1), winapi.LWA_COLORKEY)
+			h.initWindowAndCursor(hwnd, rdClientHwnd)
 			win.UpdateWindow(hwnd)
+
 			return winapi.NULL
 		case win.WM_PAINT:
 			var ps = new(win.PAINTSTRUCT)
@@ -393,7 +428,7 @@ func (h Handler) getWindowProc(rdClientHwnd win.HWND, toggleKey string) func(hwn
 	}
 }
 
-func (h *Handler) Close() {
+func (h Handler) Close() {
 	winapi.ClipCursor(nil)
 	winapi.ShowCursor(true)
 }
