@@ -24,16 +24,16 @@ go install github.com/TKMAX777/RemoteRelativeInput/cmd/RelativeInputServer@lates
 go install github.com/TKMAX777/RemoteRelativeInput/cmd/RelativeInputWorker@latest
 ```
 
+- Refer to the following for how to install OpenSSH server on Windows.
+
+[Get started with OpenSSH | Microsoft Docs](https://docs.microsoft.com/ja-jp/windows-server/administration/openssh/openssh_install_firstuse)
+
 ### Client
 
 ```sh
 go install github.com/TKMAX777/RemoteRelativeInput/cmd/RelativeInputClient@latest
 CLIENT_NAME="192.168.***.*** - Remote Desktop" RelativeInputClient | ssh 192.168.***.*** /home/.../go/bin/RelativeInputServer
 ```
-
-- Refer to the following for how to install OpenSSH server on Windows.
-
-[Get started with OpenSSH | Microsoft Docs](https://docs.microsoft.com/ja-jp/windows-server/administration/openssh/openssh_install_firstuse)
 
 ## Usage
 
