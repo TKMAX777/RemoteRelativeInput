@@ -32,7 +32,6 @@ go install github.com/TKMAX777/RemoteRelativeInput/cmd/RelativeInputWorker@lates
 
 ```sh
 go install github.com/TKMAX777/RemoteRelativeInput/cmd/RelativeInputClient@latest
-CLIENT_NAME="192.168.***.*** - Remote Desktop" RelativeInputClient | ssh 192.168.***.*** /home/.../go/bin/RelativeInputServer
 ```
 
 ## Usage
