@@ -32,12 +32,11 @@ go install github.com/TKMAX777/RemoteRelativeInput/cmd/RelativeInputWorker@lates
 
 ```sh
 go install github.com/TKMAX777/RemoteRelativeInput/cmd/RelativeInputClient@latest
-CLIENT_NAME="192.168.***.*** - Remote Desktop" RelativeInputClient | ssh 192.168.***.*** /home/.../go/bin/RelativeInputServer
 ```
 
 ## Usage
 
-### Debian / Ubuntu
+### Connect to Debian / Ubuntu
 
 ```sh
 CLIENT_NAME="192.168.***.*** - Remote Desktop" RelativeInputClient | ssh 192.168.***.*** /home/<UserName>/go/bin/RelativeInputServer
@@ -45,15 +44,15 @@ CLIENT_NAME="192.168.***.*** - Remote Desktop" RelativeInputClient | ssh 192.168
 
 - Pressing the F8 key toggles between relative and absolute input
 
-### Windows
+### Connect to Windows
 
-1. Start the worker program with an RDP session.
+1. Start the worker program on the host machine.
 
 ```
 start /d "C:\Users\<UserName>\go\bin" RelativeInputServer.exe
 ```
 
-2. Starts an SSH session.
+2. Starts an SSH session from the client machine.
 
 ```
 CLIENT_NAME='192.168.***.*** - Remote Desktop' RelativeInputClient.exe |ssh 192.168.***.*** "C:\Users\<UserName>\go\bin\RelativeInputServer.exe"
