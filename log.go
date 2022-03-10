@@ -13,6 +13,12 @@ var debug struct {
 	debug  bool
 }
 
+type nilLogger struct{}
+
+func (n nilLogger) Output(int, string) error {
+	return nil
+}
+
 func Debugf(format string, v ...interface{}) {
 	if debug.debug {
 		debug.logger.Output(2, fmt.Sprintf(format, v...))

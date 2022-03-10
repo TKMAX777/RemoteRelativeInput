@@ -101,6 +101,7 @@ func StartWorker() {
 
 	// debug.debug = true
 	// debug.logger = log.New(os.Stderr, "", 5)
+	debug.logger = nilLogger{}
 
 	var eventType, eventInput, eventValue1, eventValue2 string
 
