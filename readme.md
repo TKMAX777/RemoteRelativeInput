@@ -1,5 +1,5 @@
 # RemoteRelativeInput
-## Abstruct
+## About This Program
 This program is designed to allow relative input in an RDP (VNC) session by sending the client's input information using an SSH session. Currently, only sessions from a Windows machine to a Windows or Linux machine are supported.
 
 ![sample](https://gyazo.com/5b6e57408136ba4fcebfd2525b7dc232.gif)
