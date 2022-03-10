@@ -104,7 +104,7 @@ func StartWorker() {
 
 	var eventType, eventInput, eventValue1, eventValue2 string
 
-	fmt.Println("Start Start Worker")
+	fmt.Println("Start Worker")
 
 	for {
 		conn, err := ln.Accept()
@@ -285,7 +285,6 @@ func StartWorker() {
 		}
 
 		fmt.Println("Connection closed")
-
 		conn.Close()
 	}
 }
