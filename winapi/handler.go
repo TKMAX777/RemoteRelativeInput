@@ -49,3 +49,9 @@ func FindChildWindowsFromWindowText(parentHWND win.HWND, lpszClass *uint16, lpsz
 func SendMessage(hwnd win.HWND, msg uint32, wParam uintptr, lParam uintptr) uintptr {
 	return win.SendMessage(hwnd, msg, wParam, lParam)
 }
+
+func GetWindowTextString(hwnd win.HWND) string {
+	var name = make([]uint16, 1000)
+	GetWindowText(hwnd, uintptr(unsafe.Pointer(&name[0])), 1000)
+	return syscall.UTF16ToString(name)
+}

@@ -56,6 +56,7 @@ var (
 	procGetClassNameW               = moduser32.NewProc("GetClassNameW")
 	procGetWindowTextW              = moduser32.NewProc("GetWindowTextW")
 	procInvalidateRect              = moduser32.NewProc("InvalidateRect")
+	procMapVirtualKeyW              = moduser32.NewProc("MapVirtualKeyW")
 	procSetLayeredWindowAttributes  = moduser32.NewProc("SetLayeredWindowAttributes")
 	procSetWindowRgn                = moduser32.NewProc("SetWindowRgn")
 	procSetWindowTextW              = moduser32.NewProc("SetWindowTextW")
@@ -151,6 +152,12 @@ func invalidateRect(hwnd uintptr, rect uintptr, bErase bool) (ok bool) {
 	}
 	r0, _, _ := syscall.Syscall(procInvalidateRect.Addr(), 3, uintptr(hwnd), uintptr(rect), uintptr(_p0))
 	ok = r0 != 0
+	return
+}
+
+func mapVirtualKey(uCode uint32, uMapType uint32) (code uint32) {
+	r0, _, _ := syscall.Syscall(procMapVirtualKeyW.Addr(), 2, uintptr(uCode), uintptr(uMapType), 0)
+	code = uint32(r0)
 	return
 }
 

@@ -11,6 +11,14 @@ const (
 	LWA_ALPHA
 )
 
+const (
+	MAPVK_VK_TO_VSC uint32 = iota
+	MAPVK_VSC_TO_VK
+	MAPVK_VK_TO_CHAR
+	MAPVK_VSC_TO_VK_EX
+	MAPVK_VK_TO_VSC_EX
+)
+
 func ClipCursor(rect *win.RECT) (ok int, err error) {
 	if rect == nil {
 		return clipCursor(NULL)
@@ -84,4 +92,8 @@ func GetCursorPos(lpPoint *win.POINT) bool {
 
 func SetForegroundWindow(hWnd win.HWND) bool {
 	return win.SetForegroundWindow(hWnd)
+}
+
+func MapVirtualKey(uCode uint32, uMapType uint32) (code uint32) {
+	return mapVirtualKey(uCode, uMapType)
 }

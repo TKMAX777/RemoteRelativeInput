@@ -15,6 +15,7 @@ const NULL uintptr = 0
 //sys getClassName(hwnd uintptr, lpClassName uintptr, nMax int) (length int) = user32.GetClassNameW
 //sys setWindowText(hwnd uintptr, lpString *uint16) (ok bool) = user32.SetWindowTextW
 //sys invalidateRect(hwnd uintptr, rect uintptr, bErase bool) (ok bool) = user32.InvalidateRect
+//sys mapVirtualKey(uCode uint32, uMapType uint32) (code uint32) = user32.MapVirtualKeyW
 
 //sys createSolidBrush(color uint32) (hbrush uintptr) = Gdi32.CreateSolidBrush
 //sys createPen(iStyle int, cWidth int, color uint32) (hpen uintptr) = Gdi32.CreatePen

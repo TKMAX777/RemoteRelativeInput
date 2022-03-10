@@ -10,6 +10,16 @@ type WindowsKey struct {
 	EventInput  string
 }
 
+type windowsKeyFromEventInput map[string]WindowsKey
+
+var windowsKeysFromEventInput = windowsKeyFromEventInput{}
+
+func init() {
+	for _, k := range windowsKeys {
+		windowsKeysFromEventInput[k.EventInput] = k
+	}
+}
+
 // Windows virtual keycode to key detail
 var windowsKeys = windowsKeyMap{
 	0x01: WindowsKey{Constant: "VK_LBUTTON", Value: 0x01, Description: "Left mouse button", EventType: "EV_MOUSE", EventInput: "left"},

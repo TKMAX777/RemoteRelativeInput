@@ -9,3 +9,5 @@ require (
 	github.com/pkg/errors v0.9.1
 	golang.org/x/sys v0.0.0-20220209214540-3681064d5158
 )
+
+require github.com/natefinch/npipe v0.0.0-20160621034901-c1b8fa8bdcce // indirect

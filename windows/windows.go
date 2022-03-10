@@ -1,4 +1,4 @@
-package windows
+package client
 
 import (
 	"fmt"
@@ -175,7 +175,7 @@ func (h Handler) StartClient(rdClientHwnd win.HWND) (win.HWND, error) {
 
 			win.TranslateMessage(&msg)
 			win.DispatchMessage(&msg)
-			h.Output(10, fmt.Sprintf("disp: %+v \n", msg))
+			h.Debugf("disp: %+v \n", msg)
 		}
 	}()
 
@@ -246,8 +246,10 @@ func (h Handler) getWindowProc(rdClientHwnd win.HWND) func(hwnd win.HWND, uMsg u
 
 	return func(hwnd win.HWND, uMsg uint32, wParam uintptr, lParam uintptr) uintptr {
 		var send = func(key keymap.WindowsKey, state InputType) {
-			// toggle window mode
+			h.Debugf("Send: key: %s state: %+v", key.EventInput, state)
+
 			if key.EventInput == h.options.toggleKey {
+				// toggle window mode
 				switch state {
 				case KeyDown:
 					isRelativeMode = !isRelativeMode || h.options.toggleType == ToggleTypeOnce
@@ -257,8 +259,11 @@ func (h Handler) getWindowProc(rdClientHwnd win.HWND) func(hwnd win.HWND, uMsg u
 					}
 				}
 
+				h.Debugf("Set: isRelativeMode: %t", isRelativeMode)
+
 				if isRelativeMode {
 					h.initWindowAndCursor(hwnd, rdClientHwnd)
+					h.Debugln("Called: initWindowAndCursor")
 				} else {
 					var crectAbs win.RECT
 					if !winapi.GetWindowRect(rdClientHwnd, &crectAbs) {
@@ -273,16 +278,18 @@ func (h Handler) getWindowProc(rdClientHwnd win.HWND) func(hwnd win.HWND, uMsg u
 						fmt.Fprintf(os.Stderr, "SetWindowPos: failed to set window pos")
 					}
 
+					h.Debugln("Called: SetWindowPos")
 					winapi.ShowCursor(true)
 					winapi.ClipCursor(nil)
 				}
+				h.Debugln("ModeChangeDone")
 			}
 			if isRelativeMode {
 				h.remote.SendInput(KeyInput{key, state})
 			}
 		}
 
-		h.Output(10, fmt.Sprintf("%X(%d) ", uMsg, uMsg))
+		h.Debugf("Msg: %X(%d)", uMsg, uMsg)
 
 		switch uMsg {
 		case win.WM_CREATE:
@@ -338,47 +345,41 @@ func (h Handler) getWindowProc(rdClientHwnd win.HWND) func(hwnd win.HWND, uMsg u
 			h.Debugf("WA_CLICKACTIVE\n")
 			return winapi.NULL
 		case win.WM_SYSKEYDOWN:
-			if lParam>>30&1 == 0 {
-				key, err := keymap.GetWindowsKeyDetail(uint32(wParam))
-				if err == nil {
-					send(*key, KeyDown)
-				}
-			}
 			key, err := keymap.GetWindowsKeyDetail(uint32(wParam))
+			if err == nil && lParam>>30&1 == 0 {
+				send(*key, KeyDown)
+			}
 			if err != nil {
 				h.Debugf("WM_SYSKEYDOWN: GetKeyError: %d\n", wParam)
 			} else {
-				h.Output(4, fmt.Sprintf("WM_SYSKEYDOWN: wParam: %v lParam: %v\n", key.Constant, lParam))
+				h.Debugf("WM_SYSKEYDOWN: wParam: %v lParam: %v\n", key.Constant, lParam)
 			}
 			return winapi.NULL
 		case win.WM_SYSKEYUP:
 			key, err := keymap.GetWindowsKeyDetail(uint32(wParam))
 			if err == nil {
 				send(*key, KeyUp)
-				h.Output(4, fmt.Sprintf("WM_SYSKEYUP: wParam: %v lParam: %v\n", key.Constant, lParam))
+				h.Debugf("WM_SYSKEYUP: wParam: %v lParam: %v\n", key.Constant, lParam)
 			} else {
 				h.Debugf("WM_SYSKEYUP: GetKeyError: %d\n", wParam)
 			}
 			return winapi.NULL
 		case win.WM_KEYDOWN:
-			if lParam>>30&1 == 0 {
-				key, err := keymap.GetWindowsKeyDetail(uint32(wParam))
-				if err == nil {
-					send(*key, KeyDown)
-				}
-			}
 			key, err := keymap.GetWindowsKeyDetail(uint32(wParam))
+			// if err == nil && lParam>>30&1 == 0 {
+			send(*key, KeyDown)
+			// }
 			if err != nil {
 				h.Debugf("WM_KEYDOWN: GetKeyError: %d\n", wParam)
 			} else {
-				h.Output(4, fmt.Sprintf("WM_KEYDOWN: wParam: %v lParam: %v\n", key.Constant, lParam))
+				h.Debugf("WM_KEYDOWN: wParam: %v lParam: %v\n", key.Constant, lParam)
 			}
 			return winapi.NULL
 		case win.WM_KEYUP:
 			key, err := keymap.GetWindowsKeyDetail(uint32(wParam))
 			if err == nil {
 				send(*key, KeyUp)
-				h.Output(4, fmt.Sprintf("WM_KEYUP: wParam: %v lParam: %v\n", key.Constant, lParam))
+				h.Debugf("WM_KEYUP: wParam: %v lParam: %v\n", key.Constant, lParam)
 			} else {
 				h.Debugf("WM_KEYUP: GetKeyError: %d\n", wParam)
 			}
@@ -386,41 +387,41 @@ func (h Handler) getWindowProc(rdClientHwnd win.HWND) func(hwnd win.HWND, uMsg u
 		case win.WM_MOUSEWHEEL:
 			if int16(wParam>>16) > 0 {
 				send(keymap.WindowsKey{Constant: "WheelUp", EventType: "EV_MOUSE", EventInput: "wheel"}, KeyUp)
-				h.Output(4, "WM_MOUSEWHEEL UP")
+				h.Debugf("WM_MOUSEWHEEL UP: wP: %d\n", int16(wParam>>16))
 			} else {
 				send(keymap.WindowsKey{Constant: "WheelDown", EventType: "EV_MOUSE", EventInput: "wheel"}, KeyDown)
-				h.Output(4, "WM_MOUSEWHEEL DOWN")
+				h.Debugf("WM_MOUSEWHEEL DOWN: wP: %d\n", int16(wParam>>16))
 			}
 			return winapi.NULL
 		case win.WM_LBUTTONUP:
 			key, _ := keymap.GetWindowsKeyDetail(0x01)
 			send(*key, KeyUp)
-			h.Output(4, "WM_LBUTTONUP UP\n")
+			h.Debugf("WM_LBUTTONUP UP\n")
 			return winapi.NULL
 		case win.WM_LBUTTONDOWN:
 			key, _ := keymap.GetWindowsKeyDetail(0x01)
 			send(*key, KeyDown)
-			h.Output(4, "WM_LBUTTONUP DOWN\n")
+			h.Debugf("WM_LBUTTONUP DOWN\n")
 			return winapi.NULL
 		case win.WM_RBUTTONUP:
 			key, _ := keymap.GetWindowsKeyDetail(0x02)
 			send(*key, KeyUp)
-			h.Output(4, "WM_RBUTTONUP UP\n")
+			h.Debugf("WM_RBUTTONUP UP\n")
 			return winapi.NULL
 		case win.WM_RBUTTONDOWN:
 			key, _ := keymap.GetWindowsKeyDetail(0x02)
 			send(*key, KeyDown)
-			h.Output(4, "WM_RBUTTONDOWN DOWN\n")
+			h.Debugf("WM_RBUTTONDOWN DOWN\n")
 			return winapi.NULL
 		case win.WM_MBUTTONUP:
 			key, _ := keymap.GetWindowsKeyDetail(0x04)
 			send(*key, KeyUp)
-			h.Output(4, "WM_RBUTTONUP UP\n")
+			h.Debugf("WM_RBUTTONUP UP\n")
 			return winapi.NULL
 		case win.WM_MBUTTONDOWN:
 			key, _ := keymap.GetWindowsKeyDetail(0x02)
 			send(*key, KeyDown)
-			h.Output(4, "WM_MBUTTONDOWN DOWN\n")
+			h.Debugf("WM_MBUTTONDOWN DOWN\n")
 			return winapi.NULL
 		default:
 			return win.DefWindowProc(hwnd, uMsg, wParam, lParam)

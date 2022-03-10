@@ -9,3 +9,11 @@ func GetLinuxKeyDetail(linuxVirtualKeyCode uint32) (*LinuxKey, error) {
 	}
 	return &l, nil
 }
+
+func GetLinuxKeyDetailFromEventInput(eventInput string) (*LinuxKey, error) {
+	l, ok := linuxKeysFromEventInput[eventInput]
+	if !ok {
+		return nil, errors.New("NotFound")
+	}
+	return &l, nil
+}
