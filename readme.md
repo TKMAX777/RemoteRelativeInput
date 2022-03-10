@@ -52,7 +52,7 @@ CLIENT_NAME="192.168.***.*** - Remote Desktop" RelativeInputClient | ssh 192.168
 start /d "C:\Users\<UserName>\go\bin" RelativeInputServer.exe
 ```
 
-2. Starts an SSH session on the client machine.
+2. Starts an SSH session from the client machine.
 
 ```
 CLIENT_NAME='192.168.***.*** - Remote Desktop' RelativeInputClient.exe |ssh 192.168.***.*** "C:\Users\<UserName>\go\bin\RelativeInputServer.exe"
