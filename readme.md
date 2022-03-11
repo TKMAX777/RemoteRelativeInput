@@ -1,6 +1,6 @@
 # RemoteRelativeInput
 ## About This Program
-This program is designed to allow relative input in an RDP (VNC) session by sending the client's input information using an SSH session. Currently, only sessions from a Windows machine to a Windows or Linux machine are supported.
+This program is designed to allow relative input in an RDP (VNC) session by wrapping an existing remote desktop client window with another window and sending the client's input information using an SSH session. Currently, only sessions from a Windows machine to a Windows or Linux machine are supported.
 
 ![sample](https://gyazo.com/5b6e57408136ba4fcebfd2525b7dc232.gif)
 
@@ -24,8 +24,7 @@ go install github.com/TKMAX777/RemoteRelativeInput/cmd/RelativeInputServer@lates
 go install github.com/TKMAX777/RemoteRelativeInput/cmd/RelativeInputWorker@latest
 ```
 
-- Refer to the following for how to install OpenSSH server on Windows.
-
+- Refer to the following for how to install OpenSSH server on Windows. <br>
 [Get started with OpenSSH | Microsoft Docs](https://docs.microsoft.com/ja-jp/windows-server/administration/openssh/openssh_install_firstuse)
 
 ### Client
@@ -43,6 +42,7 @@ CLIENT_NAME="192.168.***.*** - Remote Desktop" RelativeInputClient | ssh 192.168
 ```
 
 - Pressing the F8 key toggles between relative and absolute input
+- CLIENT_NAME should be the name of an existing remote desktop client window.
 
 ### Connect to Windows
 
@@ -57,3 +57,6 @@ start /d "C:\Users\<UserName>\go\bin" RelativeInputServer.exe
 ```
 CLIENT_NAME='192.168.***.*** - Remote Desktop' RelativeInputClient.exe |ssh 192.168.***.*** "C:\Users\<UserName>\go\bin\RelativeInputServer.exe"
 ```
+
+- Pressing the F8 key toggles between relative and absolute input
+- CLIENT_NAME should be the name of an existing remote desktop client window.
