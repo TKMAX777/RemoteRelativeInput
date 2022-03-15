@@ -28,6 +28,7 @@ go install github.com/TKMAX777/RemoteRelativeInput/cmd/RelativeInputWorker@lates
 [Get started with OpenSSH | Microsoft Docs](https://docs.microsoft.com/ja-jp/windows-server/administration/openssh/openssh_install_firstuse)
 
 ### Client
+- Currently, it is reported that **SSH with GitBash is required for proper operation**.
 
 ```sh
 go install github.com/TKMAX777/RemoteRelativeInput/cmd/RelativeInputClient@latest
