@@ -40,7 +40,7 @@ go install github.com/TKMAX777/RemoteRelativeInput/cmd/RelativeInputClient@lates
 ### Connect to Debian / Ubuntu
 
 ```sh
-CLIENT_NAME="192.168.***.*** - Remote Desktop" RelativeInputClient | ssh 192.168.***.*** /home/<UserName>/go/bin/RelativeInputServer
+CLIENT_NAME="192.168.***.*** - Remote Desktop" RelativeInputClient.exe | ssh 192.168.***.*** /home/<UserName>/go/bin/RelativeInputServer
 ```
 
 - Pressing the F8 key toggles between relative and absolute input
