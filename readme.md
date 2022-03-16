@@ -51,7 +51,7 @@ CLIENT_NAME="192.168.***.*** - Remote Desktop" RelativeInputClient.exe | ssh 192
 1. Start the worker program on the host machine.
 
 ```
-start /d "C:\Users\<UserName>\go\bin" RelativeInputServer.exe
+start /d "C:\Users\<UserName>\go\bin" RelativeInputWorker.exe
 ```
 
 2. Starts an SSH session from the client machine.
