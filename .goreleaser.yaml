@@ -18,6 +18,9 @@ builds:
     goos:
       - linux
       - windows
+    ignore:
+      - goos: windows
+        goarch: arm64
   - 
     id: "Worker"
     main: ./cmd/RelativeInputWorker
@@ -25,6 +28,9 @@ builds:
       - CGO_ENABLED=0
     goos:
       - windows
+    ignore:
+      - goos: windows
+        goarch: arm64
 archives:
   - replacements:
       linux: Linux
