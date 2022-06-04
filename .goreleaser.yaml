@@ -35,12 +35,42 @@ builds:
       - goos: windows
         goarch: arm64
 archives:
-  - replacements:
+  - 
+    id: "ServerArchive"
+    builds:
+      - Server
+    replacements:
       linux: Linux
       windows: Windows
       386: i386
       amd64: x86_64
-    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    name_template: "Server_{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+  - 
+    id: "ClientArchive"
+    builds:
+      - Client
+    replacements:
+      linux: Linux
+      windows: Windows
+      386: i386
+      amd64: x86_64
+    name_template: "Client_{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+  - 
+    id: "WorkerArchive"
+    builds:
+      - Worker
+    replacements:
+      linux: Linux
+      windows: Windows
+      386: i386
+      amd64: x86_64
+    name_template: "Worker_{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
     format_overrides:
       - goos: windows
         format: zip
