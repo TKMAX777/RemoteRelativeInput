@@ -74,9 +74,10 @@ archives:
       386: i386
       amd64: x86_64
     name_template: "Worker_{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
-    format_overrides:
-      - goos: windows
-        format: zip
+    format: binary
+    # format_overrides:
+    #   - goos: windows
+    #     format: zip
 checksum:
   name_template: 'checksums.txt'
 snapshot:
