@@ -10,6 +10,9 @@ builds:
     goos:
       - linux
       - windows
+    ignore:
+      - goos: windows
+        goarch: arm64
   - 
     id: "Client"
     main: ./cmd/RelativeInputClient
