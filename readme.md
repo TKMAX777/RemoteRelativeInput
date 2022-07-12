@@ -17,17 +17,20 @@ go install github.com/TKMAX777/RemoteRelativeInput/cmd/RelativeInputServer@lates
 
 #### Windows
 
-- The [Go](https://go.dev/doc/install) and [OpenSSH Server](https://docs.microsoft.com/en-us/windows-server/administration/openssh/openssh_install_firstuse) must be installed before installation.
-- Windows requires a separate worker program to send messages to the user session.
+1. The [Go](https://go.dev/doc/install) and [OpenSSH Server](https://docs.microsoft.com/en-us/windows-server/administration/openssh/openssh_install_firstuse) must be installed before installation.
+2. Run the following commands on CMD.
 
-```
+```cmd
 go install github.com/TKMAX777/RemoteRelativeInput/cmd/RelativeInputServer@latest
 go install github.com/TKMAX777/RemoteRelativeInput/cmd/RelativeInputWorker@latest
 ```
 
+  ☆ Windows requires a separate worker program to send messages to the user session.
+  
 ### Client
-- The [Go](https://go.dev/doc/install) and [OpenSSH Client](https://docs.microsoft.com/en-us/windows-server/administration/openssh/openssh_install_firstuse) must be installed before installation.
-- Currently, it is reported that it does not work properly in PowerShell.<br>
+
+1. The [Go](https://go.dev/doc/install) and [OpenSSH Client](https://docs.microsoft.com/en-us/windows-server/administration/openssh/openssh_install_firstuse) must be installed before installation.
+2. Run the following commands on CMD.
 
 ```sh
 go install github.com/TKMAX777/RemoteRelativeInput/cmd/RelativeInputClient@latest
@@ -38,14 +41,13 @@ go install github.com/TKMAX777/RemoteRelativeInput/cmd/RelativeInputClient@lates
 ### Connect to Windows
 
 1. Open Remote Desktop Connection and connect to your server like usual and have it in Maximize Windowed (**NOT FULL SCREEN**)
-
 2. Open cmd and start the worker program on the host machine.
 
 ```
 start /d "C:\Users\<HostFolderName>\go\bin" RelativeInputWorker.exe
 ```
 
-☆ replace <HostFolderName> with the name of the folder of your account located in C:\Users
+  ☆ replace &lt;HostFolderName&gt; with the name of the folder of your account located in `C:\Users`
 
 3. Starts an SSH session from the client machine on cmd.
 
@@ -54,9 +56,10 @@ set CLIENT_NAME=<HostAddress> - Remote Desktop Connection"
 RelativeInputClient.exe | ssh <HostUsername>@<HostAddress> "C:\Users\<HostFolderName>\go\bin\RelativeInputServer.exe"
 ```
 
-replace <HostFolderName> with the name of the folder of your account located in C:\Users
-replace <HostUsername> with the Host username
-replace <HostAddress> with the IP of your host
+  ☆ replace &lt;HostFolderName&gt; with the name of the folder of your account located in C:\Users<br />
+  ☆ replace &lt;HostUsername&gt; with the Host username<br />
+  ☆ replace &lt;HostAddress&gt; with the IP of your host<br />
+  ☆ It is reported that it does not work properly in PowerShell.<br>
 
 4. Ignore the message box and click on cmd tab, and enter host user password
 
@@ -75,5 +78,5 @@ set CLIENT_NAME=<hostname> - Remote Desktop Connection
 RelativeInputClient.exe | ssh <hostname> /home/<UserName>/go/bin/RelativeInputServer
 ```
 
-☆ If your mouse disappeared hit F8 and go back to your Remote Desktop Connection Then choose RDP Input Wrapper and hit F8
-☆ replace <HostFolderName> with the name of the folder of your account located in C:\Users
+  ☆ If your mouse disappeared hit F8 and go back to your Remote Desktop Connection Then choose RDP Input Wrapper and hit  F8<br />
+  ☆ replace &lt;HostFolderName&gt; with the name of the folder of your account located in `C:\Users`
