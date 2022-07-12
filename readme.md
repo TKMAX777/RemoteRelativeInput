@@ -49,7 +49,7 @@ start /d "C:\Users\<HostFolderName>\go\bin" RelativeInputWorker.exe
 
   ☆ replace &lt;HostFolderName&gt; with the name of the folder of your account located in `C:\Users`
 
-3. Starts an SSH session from the client machine on cmd.
+3. Starts a SSH session from the client machine on cmd.
 
 ```
 set CLIENT_NAME=<HostAddress> - Remote Desktop Connection"
