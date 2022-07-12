@@ -35,6 +35,39 @@ go install github.com/TKMAX777/RemoteRelativeInput/cmd/RelativeInputClient@lates
 
 ## Usage
 
+### Connect to Windows
+
+1. Open Remote Desktop Connection and connect to your server like usual and have it in Maximize Windowed (**NOT FULL SCREEN**)
+
+2. Open cmd and start the worker program on the host machine.
+
+```
+start /d "C:\Users\<HostFolderName>\go\bin" RelativeInputWorker.exe
+```
+
+☆ replace <HostFolderName> with the name of the folder of your account located in C:\Users
+
+3. Starts an SSH session from the client machine on cmd.
+
+```
+set CLIENT_NAME=<HostAddress> - Remote Desktop Connection"
+RelativeInputClient.exe | ssh <HostUsername>@<HostAddress> "C:\Users\<HostFolderName>\go\bin\RelativeInputServer.exe"
+```
+
+replace <HostFolderName> with the name of the folder of your account located in C:\Users
+replace <HostUsername> with the Host username
+replace <HostAddress> with the IP of your host
+
+4. Ignore the message box and click on cmd tab, and enter host user password
+
+5. Press Yes in the message box displayed on the host machine.
+
+6. Press OK in the message box displayed on the client machine.
+
+7. Enjoy!
+
+☆ If your mouse disappeared hit F8 and go back to your Remote Desktop Connection Then choose RDP Input Wrapper and hit F8
+
 ### Connect to Debian / Ubuntu
 
 ```sh
@@ -42,32 +75,5 @@ set CLIENT_NAME=<hostname> - Remote Desktop Connection
 RelativeInputClient.exe | ssh <hostname> /home/<UserName>/go/bin/RelativeInputServer
 ```
 
-- Pressing the F8 key toggles between relative and absolute input
-- CLIENT_NAME should be the name of an existing remote desktop client window.
-
-### Connect to Windows
-
-1. Start the worker program on the host machine.
-
-```
-start /d "C:\Users\<HostFolderName>\go\bin" RelativeInputWorker.exe
-```
-
-2. Starts an SSH session from the client machine.
-
-```
-set CLIENT_NAME=<HostAddress> - Remote Desktop Connection"
-RelativeInputClient.exe | ssh <HostUsername>@<HostAddress> "C:\Users\<HostFolderName>\go\bin\RelativeInputServer.exe"
-```
-
-- CLIENT_NAME should be the name of an existing remote desktop client window.
-
-3. Enter host user password
-
-4. Press Yes in the message box displayed on the host machine.
-
-5. Press OK in the message box displayed on the client machine.
-
-6. Enjoy!
-
-- Pressing the F8 key toggles between relative and absolute input
+☆ If your mouse disappeared hit F8 and go back to your Remote Desktop Connection Then choose RDP Input Wrapper and hit F8
+☆ replace <HostFolderName> with the name of the folder of your account located in C:\Users
