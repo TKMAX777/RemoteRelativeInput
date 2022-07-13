@@ -69,8 +69,7 @@ RelativeInputClient.exe | ssh <HostUsername>@<HostAddress> "C:\Users\<HostFolder
 
 7. Enjoy!
 
-☆ If your mouse disappeared hit F8 and go back to your Remote Desktop Connection Then choose RDP Input Wrapper and hit F8
-
+  ☆ The mouse cursor disappears during relative input mode. If you need the cursor, use the F8 key to switch to absolute input.<br />
 ### Connect to Debian / Ubuntu
 
 ```sh
@@ -78,5 +77,5 @@ set CLIENT_NAME=<hostname> - Remote Desktop Connection
 RelativeInputClient.exe | ssh <hostname> /home/<UserName>/go/bin/RelativeInputServer
 ```
 
-  ☆ If your mouse disappeared hit F8 and go back to your Remote Desktop Connection Then choose RDP Input Wrapper and hit  F8<br />
+  ☆ The mouse cursor disappears during relative input mode. If you need the cursor, use the F8 key to switch to absolute input.<br />
   ☆ replace &lt;HostFolderName&gt; with the name of the folder of your account located in `C:\Users`
