@@ -52,7 +52,7 @@ start /d "C:\Users\<HostFolderName>\go\bin" RelativeInputWorker.exe
 3. Starts a SSH session from the client machine on cmd.
 
 ```
-set CLIENT_NAME=<HostAddress> - Remote Desktop Connection"
+set CLIENT_NAME=<HostAddress> - Remote Desktop Connection
 RelativeInputClient.exe | ssh <HostUsername>@<HostAddress> "C:\Users\<HostFolderName>\go\bin\RelativeInputServer.exe"
 ```
 
