@@ -50,6 +50,9 @@ archives:
     format_overrides:
       - goos: windows
         format: zip
+    files: 
+      - dependLicenses
+      - LICENSE
   - 
     id: "ClientArchive"
     builds:
@@ -62,6 +65,9 @@ archives:
     format_overrides:
       - goos: windows
         format: zip
+    files: 
+      - dependLicenses
+      - LICENSE
   - 
     id: "WorkerArchive"
     builds:
@@ -75,6 +81,9 @@ archives:
     format_overrides:
       - goos: windows
         format: zip
+    files: 
+      - dependLicenses
+      - LICENSE
 checksum:
   name_template: 'checksums.txt'
 snapshot:
