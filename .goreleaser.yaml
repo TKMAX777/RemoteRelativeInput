@@ -66,7 +66,7 @@ archives:
       - goos: windows
         format: zip
     files: 
-      - dependLicenses/*
+      - modLicenses/**/*
       - LICENSE
   - 
     id: "WorkerArchive"
