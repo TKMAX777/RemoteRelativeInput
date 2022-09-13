@@ -82,7 +82,7 @@ archives:
       - goos: windows
         format: zip
     files: 
-      - dependLicenses/*
+      - modLicenses/**/*
       - LICENSE
 checksum:
   name_template: 'checksums.txt'
