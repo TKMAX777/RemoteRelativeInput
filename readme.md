@@ -4,6 +4,15 @@ This program is designed to allow relative input in an RDP (VNC) session by wrap
 
 ![sample](https://gyazo.com/5b6e57408136ba4fcebfd2525b7dc232.gif)
 
+
+## News
+
+If you are going to use this for connecting from Windows to Windows via RDP, RDPRelativeInput is available!
+
+Check: 
+[github.com/TKMAX777/RDPRelativeInput](https://github.com/TKMAX777/RDPRelativeInput)
+
+
 ## install
 
 ### Server
