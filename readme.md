@@ -91,3 +91,7 @@ RelativeInputClient.exe | ssh <hostname> /home/<UserName>/go/bin/RelativeInputSe
   ☆ The mouse cursor disappears during relative input mode. If you need the cursor, use the F8 key to switch to absolute input.<br />
   ☆ To return to relative input mode, select the RDP Input Wrapper window and hit the F8 key again.<br />
   ☆ replace &lt;HostFolderName&gt; with the name of the folder of your account located in `C:\Users`
+
+## Copyright
+
+Copyright 2022- tkmax777 and contributors
