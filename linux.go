@@ -6,9 +6,12 @@ package relative_input
 import (
 	"bufio"
 	"os"
+	"strconv"
 	"strings"
 
+	"github.com/TKMAX777/RemoteRelativeInput/keymap"
 	"github.com/TKMAX777/RemoteRelativeInput/linuxapi"
+	"github.com/TKMAX777/RemoteRelativeInput/remote_send"
 )
 
 func StartClient() {
@@ -17,61 +20,86 @@ func StartClient() {
 
 func StartServer() {
 	var display = linuxapi.GetDisplay()
-
-	var eventType, eventInput, eventValue1, eventValue2 string
-
 	var xdot = linuxapi.NewXdotool(display)
 
 	scanner := bufio.NewScanner(os.Stdin)
 
 	for scanner.Scan() {
-		var augs = strings.Split(scanner.Text(), ";")
+		var augs = strings.Split(scanner.Text(), " ")
 		if len(augs) < 4 {
 			continue
 		}
-		eventType, eventInput, eventValue1, eventValue2 = augs[0], augs[1], augs[2], augs[3]
-		switch eventType {
-		case "EV_MOUSE":
+
+		eventType, err := strconv.ParseUint(augs[0], 10, 32)
+		if err != nil {
+			continue
+		}
+		eventInput, err := strconv.ParseUint(augs[1], 10, 32)
+		if err != nil {
+			continue
+		}
+		eventValue1, err := strconv.ParseInt(augs[2], 10, 32)
+		if err != nil {
+			continue
+		}
+		eventValue2, err := strconv.ParseInt(augs[3], 10, 32)
+		if err != nil {
+			continue
+		}
+
+		switch keymap.EV_TYPE(eventType) {
+		case keymap.EV_TYPE_MOUSE_MOVE:
+			switch uint32(eventInput) {
+			case uint32(remote_send.MouseMoveTypeRelative):
+				xdot.MouseMoveRelative(strconv.Itoa(int(eventValue1)), strconv.Itoa(int(eventValue2)))
+			case uint32(remote_send.MouseMoveTypeAbsolute):
+				xdot.MouseMoveAbsolute(strconv.Itoa(int(eventValue1)), strconv.Itoa(int(eventValue2)))
+			}
+		case keymap.EV_TYPE_MOUSE:
 			switch eventInput {
-			case "RelXY":
-				xdot.MouseMoveRelative(eventValue1, eventValue2)
-			case "AbsXY":
-				xdot.MouseMoveAbsolute(eventValue1, eventValue2)
-			case "right":
-				switch eventValue1 {
-				case "down":
+			// Mouse Right
+			case 0x02:
+				switch uint32(eventValue1) {
+				case uint32(remote_send.KeyDown):
 					xdot.MouseDown(linuxapi.XdotoolMouseClickRight)
-				case "up":
+				case uint32(remote_send.KeyUp):
 					xdot.MouseUp(linuxapi.XdotoolMouseClickRight)
 				}
-			case "left":
-				switch eventValue1 {
-				case "down":
+			// Mouse Left
+			case 0x01:
+				switch uint32(eventValue1) {
+				case uint32(remote_send.KeyDown):
 					xdot.MouseDown(linuxapi.XdotoolMouseClickLeft)
-				case "up":
+				case uint32(remote_send.KeyUp):
 					xdot.MouseUp(linuxapi.XdotoolMouseClickLeft)
 				}
-			case "middle":
-				switch eventValue1 {
-				case "down":
+			// Mouse Middle
+			case 0x04:
+				switch uint32(eventValue1) {
+				case uint32(remote_send.KeyDown):
 					xdot.MouseDown(linuxapi.XdotoolMouseClickMiddle)
-				case "up":
+				case uint32(remote_send.KeyUp):
 					xdot.MouseUp(linuxapi.XdotoolMouseClickMiddle)
 				}
-			case "wheel":
-				switch eventValue1 {
-				case "down":
-					xdot.WheelDown()
-				case "up":
-					xdot.WheelUp()
-				}
 			}
-		case "EV_KEY":
-			switch eventValue1 {
-			case "down":
-				xdot.KeyDown(eventInput)
-			case "up":
-				xdot.KeyUp(eventInput)
+		case keymap.EV_TYPE_WHEEL:
+			switch uint32(eventValue1) {
+			case uint32(remote_send.KeyDown):
+				xdot.WheelDown()
+			case uint32(remote_send.KeyUp):
+				xdot.WheelUp()
+			}
+		case keymap.EV_TYPE_KEY:
+			key, err := keymap.GetWindowsKeyDetail(uint32(eventInput))
+			if err != nil || key.EventInput == "" {
+				continue
+			}
+
+			switch uint32(eventValue1) {
+			case uint32(remote_send.KeyDown):
+				xdot.KeyDown(key.EventInput)
+			case uint32(remote_send.KeyUp):
+				xdot.KeyUp(key.EventInput)
 			}
 		}
 	}

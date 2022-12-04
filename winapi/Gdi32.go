@@ -15,7 +15,7 @@ func CreateRectRgnIndirect(rect win.RECT) win.HRGN {
 	return win.HRGN(createRectRgnIndirect(uintptr(unsafe.Pointer(&rect.Left))))
 }
 
-func ExtFloodFill(hdc win.HDC, x int, y int, color uint32, opType uint32) bool {
+func ExtFloodFill(hdc win.HDC, x int, y int, color uint32, opType uint32) error {
 	return extFloodFill(uintptr(hdc), x, y, color, opType)
 }
 
@@ -27,7 +27,7 @@ func CreatePen(iStyle int, cWidth int, color uint32) win.HPEN {
 	return win.HPEN(createPen(iStyle, cWidth, color))
 }
 
-func PolyDraw(hdc win.HDC, apt win.POINT, aj byte, cpt int) bool {
+func PolyDraw(hdc win.HDC, apt win.POINT, aj byte, cpt int) error {
 	return polyDraw(uintptr(hdc), uintptr(unsafe.Pointer(&apt.X)), uintptr(aj), cpt)
 }
 

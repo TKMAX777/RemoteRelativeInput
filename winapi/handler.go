@@ -23,6 +23,45 @@ func MustUTF16FromString(str string) []uint16 {
 	return ptr
 }
 
+func UTF16PtrToString(p *uint16) string {
+	if p == nil {
+		return ""
+	}
+
+	var char uint16
+	var chars = []uint16{}
+
+	for i := 0; ; i++ {
+		char = *(*uint16)(unsafe.Pointer(unsafe.Add(unsafe.Pointer(p), unsafe.Sizeof(uint16(0))*uintptr(i))))
+		chars = append(chars, char)
+		// null char
+		if char == 0 {
+			break
+		}
+	}
+	return syscall.UTF16ToString(chars)
+}
+
+func UTF8PtrToString(p *byte) string {
+	if p == nil {
+		return ""
+	}
+
+	var char byte
+	var chars = []byte{}
+
+	for i := 0; ; i++ {
+		char = *(*byte)(unsafe.Pointer(unsafe.Add(unsafe.Pointer(p), unsafe.Sizeof(byte(0))*uintptr(i))))
+		// null char
+		if char == 0 {
+			break
+		}
+		chars = append(chars, char)
+	}
+
+	return string(chars)
+}
+
 func EnumChildWindows(hwnd win.HWND) []win.HWND {
 	var res = []win.HWND{}
 
@@ -38,7 +77,7 @@ func FindChildWindowsFromWindowText(parentHWND win.HWND, lpszClass *uint16, lpsz
 	var chwnd win.HWND
 	for chwnd = FindWindowEx(parentHWND, chwnd, nil, nil); chwnd != win.HWND(NULL); chwnd = FindWindowEx(parentHWND, chwnd, nil, nil) {
 		var UTF16name = make([]uint16, 1000)
-		GetWindowText(chwnd, uintptr(unsafe.Pointer(&UTF16name[0])), 1000)
+		GetWindowText(chwnd, UTF16name, 1000)
 		if syscall.UTF16ToString(UTF16name) == windowText {
 			return chwnd
 		}
@@ -52,6 +91,6 @@ func SendMessage(hwnd win.HWND, msg uint32, wParam uintptr, lParam uintptr) uint
 
 func GetWindowTextString(hwnd win.HWND) string {
 	var name = make([]uint16, 1000)
-	GetWindowText(hwnd, uintptr(unsafe.Pointer(&name[0])), 1000)
+	GetWindowText(hwnd, name, 1000)
 	return syscall.UTF16ToString(name)
 }

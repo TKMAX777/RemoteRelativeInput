@@ -26,11 +26,11 @@ func ClipCursor(rect *win.RECT) (ok int, err error) {
 	return clipCursor(uintptr(unsafe.Pointer(&rect.Left)))
 }
 
-func EnumDesktopWindows(hDesktop win.HANDLE, lpEnumFunc uintptr, lParam uintptr) (ok bool) {
+func EnumDesktopWindows(hDesktop win.HANDLE, lpEnumFunc uintptr, lParam uintptr) error {
 	return enumDesktopWindows(uintptr(hDesktop), lpEnumFunc, lParam)
 }
 
-func FillRect(hdc win.HDC, rect win.RECT, hbr win.HBRUSH) (ok bool) {
+func FillRect(hdc win.HDC, rect win.RECT, hbr win.HBRUSH) error {
 	return fillRect(uintptr(hdc), uintptr(unsafe.Pointer(&rect.Left)), uintptr(hbr))
 }
 
@@ -46,24 +46,29 @@ func GetClassName(hwnd win.HWND, lpClassName uintptr, nMax int) (length int) {
 	return getClassName(uintptr(hwnd), lpClassName, nMax)
 }
 
-func GetWindowText(hwnd win.HWND, lpString uintptr, nMax int) (length int) {
-	return getWindowText(uintptr(hwnd), lpString, nMax)
+func GetWindowText(hwnd win.HWND, lpString []uint16, nMax int) (length int) {
+	return getWindowText(uintptr(hwnd), uintptr(unsafe.Pointer(&lpString[0])), nMax)
 }
 
-func InvalidateRect(hwnd win.HWND, rect win.RECT, bErase bool) (ok bool) {
+func InvalidateRect(hwnd win.HWND, rect win.RECT, bErase bool) error {
 	return invalidateRect(uintptr(hwnd), uintptr(unsafe.Pointer(&rect.Left)), bErase)
 }
 
-func SetLayeredWindowAttributes(hwnd win.HWND, color uint32, bAlpha byte, dwFlags uint32) (ok bool) {
+func SetLayeredWindowAttributes(hwnd win.HWND, color uint32, bAlpha byte, dwFlags uint32) error {
 	return setLayeredWindowAttributes(uintptr(hwnd), color, bAlpha, dwFlags)
 }
 
-func SetWindowRgn(hwnd win.HWND, hRgn win.HRGN, bRedraw bool) (ok bool) {
+func SetWindowRgn(hwnd win.HWND, hRgn win.HRGN, bRedraw bool) error {
 	return setWindowRgn(uintptr(hwnd), uintptr(hRgn), bRedraw)
 }
 
-func SetWindowText(hwnd win.HWND, lpString *uint16) (ok bool) {
+func SetWindowText(hwnd win.HWND, lpString *uint16) error {
 	return setWindowText(uintptr(hwnd), lpString)
+}
+
+func RegisterClassEx(windowClass *win.WNDCLASSEX) (win.ATOM, error) {
+	a, err := registerClassEx(uintptr(unsafe.Pointer(&windowClass)))
+	return win.ATOM(a), err
 }
 
 func ShowCursor(state bool) (counter int) {

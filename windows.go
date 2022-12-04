@@ -15,16 +15,18 @@ import (
 	"syscall"
 	"unsafe"
 
+	"github.com/TKMAX777/RemoteRelativeInput/debug"
 	"github.com/TKMAX777/RemoteRelativeInput/keymap"
 	"github.com/TKMAX777/RemoteRelativeInput/remote_send"
 	"github.com/TKMAX777/RemoteRelativeInput/winapi"
-	client "github.com/TKMAX777/RemoteRelativeInput/windows"
+	"github.com/TKMAX777/RemoteRelativeInput/windows_client/client"
 	"github.com/lxn/win"
 	"github.com/natefinch/npipe"
 	"github.com/pkg/errors"
 )
 
 func StartClient() {
+	debug.Debugln("==== START CLIENT APPLICATION ====")
 	win.MessageBox(win.HWND(winapi.NULL), winapi.MustUTF16PtrFromString("Click to start client"), winapi.MustUTF16PtrFromString("Confirmation"), win.MB_OK|win.MB_ICONINFORMATION)
 
 	var rHandler = remote_send.New(os.Stdout)
@@ -44,7 +46,6 @@ func StartClient() {
 	}
 
 	wHandler.SetToggleKey(toggleKey)
-	// wHandler.SetLogger(log.New(os.Stderr, "", 6))
 
 	var windowName = winapi.MustUTF16PtrFromString(os.Getenv("CLIENT_NAME"))
 	var rdHwnd = winapi.FindWindow(nil, windowName)
@@ -99,14 +100,6 @@ func StartWorker() {
 		panic(err)
 	}
 
-	// debug.debug = true
-	// debug.logger = log.New(os.Stderr, "", 5)
-	debug.logger = nilLogger{}
-
-	var eventType, eventInput, eventValue1, eventValue2 string
-
-	fmt.Println("Start Worker")
-
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
@@ -125,26 +118,34 @@ func StartWorker() {
 		scanner := bufio.NewScanner(conn)
 
 		for scanner.Scan() {
-			var augs = strings.Split(scanner.Text(), ";")
+			var augs = strings.Split(scanner.Text(), " ")
 			if len(augs) < 4 {
 				continue
 			}
-			eventType, eventInput, eventValue1, eventValue2 = augs[0], augs[1], augs[2], augs[3]
-			switch eventType {
-			case "EV_MOUSE":
-				switch eventInput {
-				case "RelXY":
-					dx, err := strconv.Atoi(eventValue1)
-					if err != nil {
-						log.Println(errors.Wrap(err, "ParseMouseXerror"))
-						continue
-					}
 
-					dy, err := strconv.Atoi(eventValue2)
-					if err != nil {
-						log.Println(errors.Wrap(err, "ParseMouseYerror"))
-						continue
-					}
+			eventType, err := strconv.ParseUint(augs[0], 10, 32)
+			if err != nil {
+				continue
+			}
+			eventInput, err := strconv.ParseUint(augs[1], 10, 32)
+			if err != nil {
+				continue
+			}
+			eventValue1, err := strconv.ParseInt(augs[2], 10, 32)
+			if err != nil {
+				continue
+			}
+			eventValue2, err := strconv.ParseInt(augs[3], 10, 32)
+			if err != nil {
+				continue
+			}
+
+			switch keymap.EV_TYPE(eventType) {
+			case keymap.EV_TYPE_MOUSE_MOVE:
+				switch uint32(eventInput) {
+				case uint32(remote_send.MouseMoveTypeRelative):
+					var dx = eventValue1
+					var dy = eventValue2
 
 					var mouseInput = win.MOUSE_INPUT{
 						Type: win.INPUT_MOUSE,
@@ -156,19 +157,10 @@ func StartWorker() {
 					}
 
 					win.SendInput(1, unsafe.Pointer(&mouseInput), int32(unsafe.Sizeof(win.MOUSE_INPUT{})))
-					debug.logger.Output(2, fmt.Sprintf("SendInput: MouseREL: dx: %d dy: %d", dx, dy))
-				case "AbsXY":
-					x, err := strconv.Atoi(eventValue1)
-					if err != nil {
-						log.Println(errors.Wrap(err, "ParseMouseXerror"))
-						continue
-					}
-
-					y, err := strconv.Atoi(eventValue2)
-					if err != nil {
-						log.Println(errors.Wrap(err, "ParseMouseYerror"))
-						continue
-					}
+					debug.Debugf("SendInput: MouseREL: dx: %d dy: %d\n", dx, dy)
+				case uint32(remote_send.MouseMoveTypeAbsolute):
+					var x = eventValue1
+					var y = eventValue2
 
 					var mouseInput = win.MOUSE_INPUT{
 						Type: win.INPUT_MOUSE,
@@ -180,90 +172,93 @@ func StartWorker() {
 					}
 
 					win.SendInput(1, unsafe.Pointer(&mouseInput), int32(unsafe.Sizeof(win.MOUSE_INPUT{})))
-					debug.logger.Output(2, fmt.Sprintf("SendInput: MouseREL: x: %d y: %d", x, y))
-				case "right":
+					debug.Debugf("SendInput: MouseREL: x: %d y: %d\n", x, y)
+				}
+			case keymap.EV_TYPE_MOUSE:
+				switch eventInput {
+				// Mouse Right
+				case 0x02:
 					var mouseInput = win.MOUSE_INPUT{
 						Type: win.INPUT_MOUSE,
 					}
 
-					switch eventValue1 {
-					case "down":
+					switch uint32(eventValue1) {
+					case uint32(remote_send.KeyDown):
 						mouseInput.Mi = win.MOUSEINPUT{
 							DwFlags: win.MOUSEEVENTF_RIGHTDOWN,
 						}
-						debug.logger.Output(2, "SendInput: MouseRightDown")
-					case "up":
+						debug.Debugln("SendInput: MouseRightDown")
+					case uint32(remote_send.KeyUp):
 						mouseInput.Mi = win.MOUSEINPUT{
 							DwFlags: win.MOUSEEVENTF_RIGHTUP,
 						}
-						debug.logger.Output(2, "SendInput: MouseRightUp")
+						debug.Debugln("SendInput: MouseRightUp")
 					}
 
 					win.SendInput(1, unsafe.Pointer(&mouseInput), int32(unsafe.Sizeof(win.MOUSE_INPUT{})))
-				case "left":
+
+				// Mouse Left
+				case 0x01:
 					var mouseInput = win.MOUSE_INPUT{
 						Type: win.INPUT_MOUSE,
 					}
 
-					switch eventValue1 {
-					case "down":
+					switch uint32(eventValue1) {
+					case uint32(remote_send.KeyDown):
 						mouseInput.Mi = win.MOUSEINPUT{
 							DwFlags: win.MOUSEEVENTF_LEFTDOWN,
 						}
-						debug.logger.Output(2, "SendInput: MouseLeftDown")
-					case "up":
+						debug.Debugln("SendInput: MouseLeftDown")
+					case uint32(remote_send.KeyUp):
 						mouseInput.Mi = win.MOUSEINPUT{
 							DwFlags: win.MOUSEEVENTF_LEFTUP,
 						}
-						debug.logger.Output(2, "SendInput: MouseLeftUp")
+						debug.Debugln("SendInput: MouseLeftUp")
 					}
 
 					win.SendInput(1, unsafe.Pointer(&mouseInput), int32(unsafe.Sizeof(win.MOUSE_INPUT{})))
-				case "middle":
+
+				// Mouse Middle
+				case 0x04:
 					var mouseInput = win.MOUSE_INPUT{
 						Type: win.INPUT_MOUSE,
 					}
 
-					switch eventValue1 {
-					case "down":
+					switch uint32(eventValue1) {
+					case uint32(remote_send.KeyDown):
 						mouseInput.Mi = win.MOUSEINPUT{
 							DwFlags: win.MOUSEEVENTF_MIDDLEDOWN,
 						}
-						debug.logger.Output(2, "SendInput: MouseMiddleDown")
-					case "up":
+						debug.Debugln("SendInput: MouseMiddleDown")
+					case uint32(remote_send.KeyUp):
 						mouseInput.Mi = win.MOUSEINPUT{
 							DwFlags: win.MOUSEEVENTF_MIDDLEUP,
 						}
-						debug.logger.Output(2, "SendInput: MouseMiddleUp")
-					}
-
-					win.SendInput(1, unsafe.Pointer(&mouseInput), int32(unsafe.Sizeof(win.MOUSE_INPUT{})))
-				case "wheel":
-					var mouseInput = win.MOUSE_INPUT{
-						Type: win.INPUT_MOUSE,
-						Mi: win.MOUSEINPUT{
-							DwFlags: win.MOUSEEVENTF_WHEEL,
-						},
-					}
-					switch eventValue1 {
-					case "down":
-						mouseInput.Mi.MouseData = ^uint32(120) + 1
-						debug.logger.Output(2, "SendInput: MouseMiddleDown")
-					case "up":
-						mouseInput.Mi.MouseData = 120
-						debug.logger.Output(2, "SendInput: MouseMiddleUp")
+						debug.Debugln("SendInput: MouseMiddleUp")
 					}
 
 					win.SendInput(1, unsafe.Pointer(&mouseInput), int32(unsafe.Sizeof(win.MOUSE_INPUT{})))
 				}
-			case "EV_KEY":
-				key, err := keymap.GetWindowsKeyDetailFromEventInput(eventInput)
-				if err != nil {
-					log.Println(errors.New("KeyNotFound"))
-					continue
+			case keymap.EV_TYPE_WHEEL:
+				var mouseInput = win.MOUSE_INPUT{
+					Type: win.INPUT_MOUSE,
+					Mi: win.MOUSEINPUT{
+						DwFlags: win.MOUSEEVENTF_WHEEL,
+					},
+				}
+				switch uint32(eventValue1) {
+				case uint32(remote_send.KeyDown):
+					mouseInput.Mi.MouseData = ^uint32(120) + 1
+					debug.Debugln("SendInput: MouseMiddleDown")
+				case uint32(remote_send.KeyUp):
+					mouseInput.Mi.MouseData = 120
+					debug.Debugln("SendInput: MouseMiddleUp")
 				}
 
-				var mappedKey = winapi.MapVirtualKey(key.Value, winapi.MAPVK_VK_TO_VSC)
+				win.SendInput(1, unsafe.Pointer(&mouseInput), int32(unsafe.Sizeof(win.MOUSE_INPUT{})))
+
+			case keymap.EV_TYPE_KEY:
+				var mappedKey = winapi.MapVirtualKey(uint32(eventInput), winapi.MAPVK_VK_TO_VSC)
 
 				var keyInput = win.KEYBD_INPUT{
 					Type: win.INPUT_KEYBOARD,
@@ -272,20 +267,16 @@ func StartWorker() {
 					},
 				}
 
-				switch eventValue1 {
-				case "down":
+				switch uint32(eventValue1) {
+				case uint32(remote_send.KeyDown):
 					keyInput.Ki.DwFlags = win.KEYEVENTF_SCANCODE
 					win.SendInput(1, unsafe.Pointer(&keyInput), int32(unsafe.Sizeof(win.KEYBD_INPUT{})))
-					debug.logger.Output(2, fmt.Sprintf("SendInput: KeyDown: %+v", key))
-				case "up":
+				case uint32(remote_send.KeyUp):
 					keyInput.Ki.DwFlags = win.KEYEVENTF_KEYUP | win.KEYEVENTF_SCANCODE
 					win.SendInput(1, unsafe.Pointer(&keyInput), int32(unsafe.Sizeof(win.KEYBD_INPUT{})))
-					debug.logger.Output(2, fmt.Sprintf("SendInput: KeyUp: %+v", key))
 				}
 			}
 		}
-
-		fmt.Println("Connection closed")
 		conn.Close()
 	}
 }
