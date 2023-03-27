@@ -57,7 +57,7 @@ If you are willing to connect to windows host from windows client via RDP(Remote
 
 However, if you are trying to connect from Windows (ARM64) or you are using VNC protocol, still you have to use this program.
 
-These are usage:
+These are the usage:
 
 1. Open Remote Desktop Connection (or VNC client) and connect to your server like usual.
 2. Open cmd and start the server program on the host machine.
