@@ -8,7 +8,7 @@ This program is designed to allow relative input in an RDP (VNC) session by wrap
 
 ## News
 
-If you are going to use this for connecting from Windows to Windows via RDP (RemoteDesktop), RDPRelativeInput is available!`<br />`
+If you are going to use this for connecting from Windows to Windows via RDP (RemoteDesktop), RDPRelativeInput is available!<br />
 This program is easier to install and use.
 
 Check:
@@ -77,9 +77,9 @@ RelativeInputClient.exe | ssh <HostUsername>@<HostAddress> "C:\Users\<HostFolder
 
   ☆ replace "&lt;CLIENT_NAME&gt; with the title of your VNC or RDP client window title
     ☆ if you are using Remote Desktop Connection and your windows system language is ENG, it will be like this: `<HostAddress> - Remote Desktop Connection`
-    ☆ replace &lt;HostAddress&gt; with the IP of your host`<br />`
-  ☆ replace &lt;HostFolderName&gt; with the name of the folder of your account located in C:\Users`<br />`
-  ☆ replace &lt;HostUsername&gt; with the Host username`<br />`
+    ☆ replace &lt;HostAddress&gt; with the IP of your host<br />
+  ☆ replace &lt;HostFolderName&gt; with the name of the folder of your account located in C:\Users<br />
+  ☆ replace &lt;HostUsername&gt; with the Host username<br />
   ☆ It is reported that it does not work properly in PowerShell.`<br>`
 
 4. Ignore the message box and click on cmd tab, and enter host user password
@@ -87,9 +87,9 @@ RelativeInputClient.exe | ssh <HostUsername>@<HostAddress> "C:\Users\<HostFolder
 6. Press OK in the message box displayed on the client machine.
 7. Enjoy!
 
-  ☆ If you need client cursor, use the F8 key to switch to absolute input.`<br />`
-  ☆ To return to relative input mode, select the RDP Input Wrapper window and hit the F8 key again.`<br />`
-  ☆ To close this app, hold the F12 key.`<br />`
+  ☆ If you need client cursor, use the F8 key to switch to absolute input.<br />
+  ☆ To return to relative input mode, select the RDP Input Wrapper window and hit the F8 key again.<br />
+  ☆ To close this app, hold the F12 key.<br />
   ☆ Administrator privileges are required for operation in some games. In that case, please run RelativeInputServer.exe with Administrator privileges.
 
 ### Connect to Debian / Ubuntu
@@ -99,8 +99,8 @@ set CLIENT_NAME=<hostname> - Remote Desktop Connection
 RelativeInputClient.exe | ssh <hostname> /home/<UserName>/go/bin/RelativeInputServer
 ```
 
-  ☆ The mouse cursor disappears during relative input mode. If you need the cursor, use the F8 key to switch to absolute input.`<br />`
-  ☆ To return to relative input mode, select the RDP Input Wrapper window and hit the F8 key again.`<br />`
+  ☆ The mouse cursor disappears during relative input mode. If you need the cursor, use the F8 key to switch to absolute input.<br />
+  ☆ To return to relative input mode, select the RDP Input Wrapper window and hit the F8 key again.<br />
   ☆ replace &lt;HostFolderName&gt; with the name of the folder of your account located in `C:\Users`
 
 ## Why this program uses Graphics Capture API?
