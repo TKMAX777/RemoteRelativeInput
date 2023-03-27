@@ -5,12 +5,17 @@ This program is designed to allow relative input in an RDP (VNC) session by wrap
 ![sample](https://gyazo.com/5b6e57408136ba4fcebfd2525b7dc232.gif)
 
 
+
+
 ## News 
 
-If you are going to use this for connecting from Windows to Windows via RDP (RemoteDesktop), RDPRelativeInput is available!
+If you are going to use this for connecting from Windows to Windows via RDP (RemoteDesktop), RDPRelativeInput is available!<br />
+This program is easier to install and use.
 
 Check: 
 [github.com/TKMAX777/RDPRelativeInput](https://github.com/TKMAX777/RDPRelativeInput)
+
+
 
 
 ## install
@@ -31,7 +36,7 @@ go install github.com/TKMAX777/RemoteRelativeInput/cmd/RelativeInputServer@lates
 
 ```cmd
 go install github.com/TKMAX777/RemoteRelativeInput/cmd/RelativeInputServer@latest
-go install github.com/TKMAX777/RemoteRelativeInput/cmd/RelativeInputWorker@latest
+go install github.com/TKMAX777/RemoteRelativeInput/cmd/RelativeInputTransferer@latest
 ```
 
   ☆ Windows requires a separate worker program to send messages to the user session.
@@ -49,11 +54,21 @@ go install github.com/TKMAX777/RemoteRelativeInput/cmd/RelativeInputClient@lates
 
 ### Connect to Windows
 
-1. Open Remote Desktop Connection and connect to your server like usual and have it in Maximize Windowed (**NOT FULL SCREEN**)
-2. Open cmd and start the worker program on the host machine.
+**Hint**
+
+If you are willing to connect to windows host from windows client via RDP(RemoteDesktop), you can use this: 
+
+[github.com/TKMAX777/RDPRelativeInput](https://github.com/TKMAX777/RDPRelativeInput)
+
+However, if you are trying to connect from Windows (ARM64) or you are using VNC protocol, still you have to use this program.
+
+These are usage:
+
+1. Open Remote Desktop Connection (or VNC client) and connect to your server like usual.
+2. Open cmd and start the server program on the host machine.
 
 ```
-start /d "C:\Users\<HostFolderName>\go\bin" RelativeInputWorker.exe
+start /d "C:\Users\<HostFolderName>\go\bin" RelativeInputServer.exe
 ```
 
   ☆ replace &lt;HostFolderName&gt; with the name of the folder of your account located in `C:\Users`
@@ -61,13 +76,15 @@ start /d "C:\Users\<HostFolderName>\go\bin" RelativeInputWorker.exe
 3. Starts a SSH session from the client machine on cmd.
 
 ```
-set CLIENT_NAME=<HostAddress> - Remote Desktop Connection
-RelativeInputClient.exe | ssh <HostUsername>@<HostAddress> "C:\Users\<HostFolderName>\go\bin\RelativeInputServer.exe"
+set CLIENT_NAME=<CLIENT_NAME> 
+RelativeInputClient.exe | ssh <HostUsername>@<HostAddress> "C:\Users\<HostFolderName>\go\bin\RelativeInputTransferer.exe"
 ```
 
+  ☆ replace "&lt;CLIENT_NAME&gt; with the title of your VNC or RDP client window title
+    ☆ if you are using Remote Desktop Connection and your windows system language is ENG, it will be like this: `<HostAddress> - Remote Desktop Connection`
+    ☆ replace &lt;HostAddress&gt; with the IP of your host<br />
   ☆ replace &lt;HostFolderName&gt; with the name of the folder of your account located in C:\Users<br />
   ☆ replace &lt;HostUsername&gt; with the Host username<br />
-  ☆ replace &lt;HostAddress&gt; with the IP of your host<br />
   ☆ It is reported that it does not work properly in PowerShell.<br>
 
 4. Ignore the message box and click on cmd tab, and enter host user password
@@ -78,9 +95,11 @@ RelativeInputClient.exe | ssh <HostUsername>@<HostAddress> "C:\Users\<HostFolder
 
 7. Enjoy!
 
-  ☆ The mouse cursor disappears during relative input mode. If you need the cursor, use the F8 key to switch to absolute input.<br />
+  ☆ If you need client cursor, use the F8 key to switch to absolute input.<br />
   ☆ To return to relative input mode, select the RDP Input Wrapper window and hit the F8 key again.<br />
-   
+  ☆ To close this app, hold the F12 key.<br />
+  ☆ Administrator privileges are required for operation in some games. In that case, please run RelativeInputServer.exe with Administrator privileges.
+
 ### Connect to Debian / Ubuntu
 
 ```sh
@@ -91,6 +110,13 @@ RelativeInputClient.exe | ssh <hostname> /home/<UserName>/go/bin/RelativeInputSe
   ☆ The mouse cursor disappears during relative input mode. If you need the cursor, use the F8 key to switch to absolute input.<br />
   ☆ To return to relative input mode, select the RDP Input Wrapper window and hit the F8 key again.<br />
   ☆ replace &lt;HostFolderName&gt; with the name of the folder of your account located in `C:\Users`
+
+
+## Why this program uses Graphics Capture API?
+
+This program uses Graphics Capture API on the windows host computer.
+
+In a remote desktop connection, the cursor on the host side is normally not displayed. However, the GraphicsCaptureAPI allows the cursor to be displayed, so this program creates a button which can turn this feature on and off and captures that window.
 
 ## Copyright
 

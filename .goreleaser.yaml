@@ -26,9 +26,9 @@ builds:
       - goos: windows
         goarch: arm64
   - 
-    id: "Worker"
-    main: ./cmd/RelativeInputWorker
-    binary: RelativeInputWorker
+    id: "Transferer"
+    main: ./cmd/RelativeInputTransferer
+    binary: RelativeInputTransferer
     env:
       - CGO_ENABLED=0
     goos:
@@ -69,9 +69,9 @@ archives:
       - modLicenses/**/*
       - LICENSE
   - 
-    id: "WorkerArchive"
+    id: "TransfererArchive"
     builds:
-      - Worker
+      - Transferer
     replacements:
       linux: Linux
       windows: Windows

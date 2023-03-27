@@ -1,0 +1,109 @@
+before:
+  hooks:
+    - go mod tidy
+builds:
+  - 
+    id: "Server"
+    main: ./cmd/RelativeInputServer
+    binary: RelativeInputServer
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+    ignore:
+      - goos: windows
+        goarch: arm64
+  - 
+    id: "Client"
+    main: ./cmd/RelativeInputClient
+    binary: RelativeInputClient
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - windows
+    ignore:
+      - goos: windows
+        goarch: arm64
+  - 
+    id: "Worker"
+    main: ./cmd/RelativeInputWorker
+    binary: RelativeInputWorker
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - windows
+    ignore:
+      - goos: windows
+        goarch: arm64
+archives:
+  - 
+    id: "ServerArchive"
+    builds:
+      - Server
+    replacements:
+      linux: Linux
+      windows: Windows
+      386: i386
+      amd64: x86_64
+    name_template: "Server_{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+    files: 
+      - modLicenses/**/*
+      - LICENSE
+  - 
+    id: "ClientArchive"
+    builds:
+      - Client
+    replacements:
+      windows: Windows
+      386: i386
+      amd64: x86_64
+    name_template: "Client_{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+    files: 
+      - modLicenses/**/*
+      - LICENSE
+  - 
+    id: "WorkerArchive"
+    builds:
+      - Worker
+    replacements:
+      linux: Linux
+      windows: Windows
+      386: i386
+      amd64: x86_64
+    name_template: "Worker_{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+    files: 
+      - modLicenses/**/*
+      - LICENSE
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+release:
+  draft: false
+
+  prerelease: auto
+
+  mode: append
+
+  header: |
+    ## Update ({{ .Date }})
+  footer: |
+    Those were the changes on {{ .Tag }}!
+  name_template: "{{.ProjectName}}-v{{.Version}}"
+  
