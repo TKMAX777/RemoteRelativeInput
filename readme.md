@@ -94,7 +94,7 @@ RelativeInputClient.exe | ssh <HostUsername>@<HostAddress> "C:\Users\<HostFolder
   ☆ If you are using a keyboard setting other than the US keyboard setting, the response speed may be significantly reduced due to the IME.<br />
       In this case, please add the US keyboard from the Windows settings.<br />
       `Settings -> Time and Language -> Add Language -> English (US) -> Language Options -> Add Keyboard`<br />
-  ☆ When you want to quit this program, please press and hold F12.
+ 
 ### Connect to Debian / Ubuntu
 
 ```sh
