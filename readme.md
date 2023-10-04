@@ -75,7 +75,7 @@ set CLIENT_NAME=<CLIENT_NAME>
 RelativeInputClient.exe | ssh <HostUsername>@<HostAddress> "C:\Users\<HostFolderName>\go\bin\RelativeInputTransferer.exe"
 ```
 
-  ☆ replace "&lt;CLIENT_NAME&gt; with the title of your VNC or RDP client window title<br />
+  ☆ replace "&lt;CLIENT_NAME&gt; with the title of your VNC or RDP client window<br />
     ☆ if you are using Remote Desktop Connection and your windows system language is ENG, it will be like this: `<HostAddress> - Remote Desktop Connection`<br />
     ☆ replace &lt;HostAddress&gt; with the IP of your host<br />
   ☆ replace &lt;HostFolderName&gt; with the name of the folder of your account located in C:\Users<br />
