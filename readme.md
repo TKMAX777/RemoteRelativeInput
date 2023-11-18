@@ -106,7 +106,7 @@ RelativeInputClient.exe | ssh <hostname> /home/<UserName>/go/bin/RelativeInputSe
   ☆ To return to relative input mode, select the RDP Input Wrapper window and hit the F8 key again.<br />
   ☆ replace &lt;HostFolderName&gt; with the name of the folder of your account located in `C:\Users`
 
-## Why this program uses Graphics Capture API?
+## Why does this program use Graphics Capture API?
 
 This program uses Graphics Capture API on the windows host computer.
 
