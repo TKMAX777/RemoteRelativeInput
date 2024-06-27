@@ -10,6 +10,7 @@ import (
 	"github.com/TKMAX777/RemoteRelativeInput/debug"
 	"github.com/TKMAX777/RemoteRelativeInput/remote_send"
 	"github.com/TKMAX777/RemoteRelativeInput/winapi"
+	windowselecter "github.com/TKMAX777/RemoteRelativeInput/windows/client/window_selecter"
 	"github.com/lxn/win"
 )
 
@@ -40,8 +41,19 @@ func StartClient() {
 
 	wHandler.SetToggleKey(toggleKey)
 
+	var rdHwnd win.HWND
 	var windowName = winapi.MustUTF16PtrFromString(os.Getenv("CLIENT_NAME"))
-	var rdHwnd = winapi.FindWindow(nil, windowName)
+	rdHwnd = winapi.FindWindow(nil, windowName)
+	if rdHwnd == 0 || os.Getenv("CLIENT_NAME") == "" {
+		var err error
+		rdHwnd, err = windowselecter.Dialog()
+		if err == windowselecter.ErrorQuitted {
+			return
+		}
+		if err != nil {
+			panic("Error: WindowSelecter: " + err.Error())
+		}
+	}
 
 	_, err := wHandler.StartClient(rdHwnd)
 	if err != nil {
